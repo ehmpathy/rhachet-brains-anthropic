@@ -25,7 +25,7 @@ const response = await brainAtom.ask({
 });
 
 // structured object output
-const result = await brainAtom.ask({
+const { summary, issues } = await brainAtom.ask({
   role: { briefs: [] },
   prompt: 'analyze this code',
   schema: { output: z.object({ summary: z.string(), issues: z.array(z.string()) }) },
