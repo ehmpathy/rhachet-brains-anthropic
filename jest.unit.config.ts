@@ -14,16 +14,18 @@ const config: Config = {
   verbose: true,
   reporters: [['default', { summaryThreshold: 0 }]], // ensure we always get a failure summary at the bottom, to avoid the hunt
   testEnvironment: 'node',
-  moduleFileExtensions: ['js', 'ts'],
+  moduleFileExtensions: ['js', 'ts', 'mjs'],
   moduleNameMapper: {
     '^@src/(.*)$': '<rootDir>/src/$1',
   },
   transform: {
     '^.+\\.(t|j)sx?$': '@swc/jest',
+    '^.+\\.mjs$': '@swc/jest',
   },
   transformIgnorePatterns: [
-    // here's an example of how to ignore esm module transformation, when needed
-    // 'node_modules/(?!(@octokit|universal-user-agent|before-after-hook)/)',
+    // transform esm modules that jest would otherwise choke on
+    // pattern handles both direct node_modules and pnpm's .pnpm structure
+    '/node_modules/(?!(\\.pnpm/(@anthropic-ai))|(@anthropic-ai)/)',
   ],
   testMatch: [
     // note: order matters
