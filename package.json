@@ -2,7 +2,7 @@
   "name": "rhachet-brains-anthropic",
   "author": "ehmpathy",
   "description": "rhachet brain.atom and brain.repl adapter for anthropic",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "repository": "ehmpathy/rhachet-brains-anthropic",
   "homepage": "https://github.com/ehmpathy/rhachet-brains-anthropic",
   "keywords": [
