@@ -18,7 +18,7 @@ import { z } from 'zod';
 const brainAtom = genBrainAtom({ slug: 'claude/sonnet' });
 
 // simple string output
-const response = await brainAtom.ask({
+const explanation = await brainAtom.ask({
   role: { briefs: [] },
   prompt: 'explain this code',
   schema: { output: z.string() },
@@ -35,17 +35,17 @@ const { summary, issues } = await brainAtom.ask({
 const brainRepl = genBrainRepl({ slug: 'claude/code' });
 
 // use ask() for read-only operations
-const analysis = await brainRepl.ask({
+const { analysis } = await brainRepl.ask({
   role: { briefs: [] },
   prompt: 'analyze this codebase',
-  schema: { output: z.object({ content: z.string() }) },
+  schema: { output: z.object({ analysis: z.string() }) },
 });
 
 // use act() for read+write operations
-const refactor = await brainRepl.act({
+const { proposal } = await brainRepl.act({
   role: { briefs: [] },
   prompt: 'refactor this module',
-  schema: { output: z.object({ content: z.string() }) },
+  schema: { output: z.object({ proposal: z.string() }) },
 });
 ```
 
