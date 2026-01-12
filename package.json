@@ -1,7 +1,7 @@
 {
   "name": "rhachet-brains-anthropic",
   "author": "ehmpathy",
-  "description": "rhachet brain.atom and brain.repl adapter for openai",
+  "description": "rhachet brain.atom and brain.repl adapter for anthropic",
   "version": "0.1.1",
   "repository": "ehmpathy/rhachet-brains-anthropic",
   "homepage": "https://github.com/ehmpathy/rhachet-brains-anthropic",
@@ -55,6 +55,9 @@
     "prepare:husky": "husky install && chmod ug+x .husky/*",
     "prepare:rhachet": "rhachet init --mode upsert && rhachet roles link --repo ehmpathy --role mechanic && rhachet roles link --repo bhuild --role behaver && rhachet roles link --repo bhrain --role reviewer && rhachet roles init --role mechanic && rhachet roles init --role behaver",
     "prepare": "if [ -e .git ] && [ -z $CI ]; then npm run prepare:husky && npm run prepare:rhachet; fi"
+  },
+  "peerDependencies": {
+    "rhachet": ">=1.21.4"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.1.76",
