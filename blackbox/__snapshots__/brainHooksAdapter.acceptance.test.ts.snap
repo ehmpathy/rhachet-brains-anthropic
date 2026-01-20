@@ -1,0 +1,163 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del operations when: [t1] after upsert of all four hooks then: settings.json matches snapshot 1`] = `
+"{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \\"mechanic booted\\"",
+            "timeout": 30
+          }
+        ],
+        "author": "repo=myapp/role=mechanic"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \\"reviewer ready\\"",
+            "timeout": 15
+          }
+        ],
+        "author": "repo=myapp/role=reviewer"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx rhachet validate --tool $TOOL_NAME",
+            "timeout": 60
+          }
+        ],
+        "author": "repo=myapp/role=mechanic"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx rhachet summarize",
+            "timeout": 120
+          }
+        ],
+        "author": "repo=myapp/role=reviewer"
+      }
+    ]
+  }
+}
+"
+`;
+
+exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del operations when: [t2] after del of mechanic onBoot hook then: settings.json matches snapshot 1`] = `
+"{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \\"reviewer ready\\"",
+            "timeout": 15
+          }
+        ],
+        "author": "repo=myapp/role=reviewer"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx rhachet validate --tool $TOOL_NAME",
+            "timeout": 60
+          }
+        ],
+        "author": "repo=myapp/role=mechanic"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx rhachet summarize",
+            "timeout": 120
+          }
+        ],
+        "author": "repo=myapp/role=reviewer"
+      }
+    ]
+  }
+}
+"
+`;
+
+exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del operations when: [t3] after del of all reviewer hooks then: settings.json matches snapshot 1`] = `
+"{
+  "hooks": {
+    "SessionStart": [],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx rhachet validate --tool $TOOL_NAME",
+            "timeout": 60
+          }
+        ],
+        "author": "repo=myapp/role=mechanic"
+      }
+    ],
+    "Stop": []
+  }
+}
+"
+`;
+
+exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del operations when: [t4] after upsert updates timeout on last hook then: settings.json matches snapshot 1`] = `
+"{
+  "hooks": {
+    "SessionStart": [],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx rhachet validate --tool $TOOL_NAME",
+            "timeout": 90
+          }
+        ],
+        "author": "repo=myapp/role=mechanic"
+      }
+    ],
+    "Stop": []
+  }
+}
+"
+`;
+
+exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del operations when: [t5] after del of last hook then: settings.json matches snapshot 1`] = `
+"{
+  "hooks": {
+    "SessionStart": [],
+    "PreToolUse": [],
+    "Stop": []
+  }
+}
+"
+`;

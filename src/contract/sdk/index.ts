@@ -30,4 +30,7 @@ export const getBrainReplsByAnthropic = (): BrainRepl[] => {
 
 // re-export factories for direct access
 export { genBrainAtom } from '../../domain.operations/atoms/genBrainAtom';
+export { genBrainHooksAdapterForClaudeCode } from '../../domain.operations/hooks/genBrainHooksAdapterForClaudeCode';
+// brain hooks adapter for claude code
+export { getBrainHooks } from '../../domain.operations/hooks/getBrainHooks';
 export { genBrainRepl } from '../../domain.operations/repls/genBrainRepl';
