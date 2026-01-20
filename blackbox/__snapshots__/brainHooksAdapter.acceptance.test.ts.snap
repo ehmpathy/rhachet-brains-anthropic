@@ -10,21 +10,16 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "echo \\"mechanic booted\\"",
-            "timeout": 30
-          }
-        ],
-        "author": "repo=myapp/role=mechanic"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
+            "timeout": 30,
+            "author": "repo=myapp/role=mechanic"
+          },
           {
             "type": "command",
             "command": "echo \\"reviewer ready\\"",
-            "timeout": 15
+            "timeout": 15,
+            "author": "repo=myapp/role=reviewer"
           }
-        ],
-        "author": "repo=myapp/role=reviewer"
+        ]
       }
     ],
     "PreToolUse": [
@@ -34,10 +29,10 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "npx rhachet validate --tool $TOOL_NAME",
-            "timeout": 60
+            "timeout": 60,
+            "author": "repo=myapp/role=mechanic"
           }
-        ],
-        "author": "repo=myapp/role=mechanic"
+        ]
       }
     ],
     "Stop": [
@@ -47,10 +42,10 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "npx rhachet summarize",
-            "timeout": 120
+            "timeout": 120,
+            "author": "repo=myapp/role=reviewer"
           }
-        ],
-        "author": "repo=myapp/role=reviewer"
+        ]
       }
     ]
   }
@@ -68,10 +63,10 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "echo \\"reviewer ready\\"",
-            "timeout": 15
+            "timeout": 15,
+            "author": "repo=myapp/role=reviewer"
           }
-        ],
-        "author": "repo=myapp/role=reviewer"
+        ]
       }
     ],
     "PreToolUse": [
@@ -81,10 +76,10 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "npx rhachet validate --tool $TOOL_NAME",
-            "timeout": 60
+            "timeout": 60,
+            "author": "repo=myapp/role=mechanic"
           }
-        ],
-        "author": "repo=myapp/role=mechanic"
+        ]
       }
     ],
     "Stop": [
@@ -94,10 +89,10 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "npx rhachet summarize",
-            "timeout": 120
+            "timeout": 120,
+            "author": "repo=myapp/role=reviewer"
           }
-        ],
-        "author": "repo=myapp/role=reviewer"
+        ]
       }
     ]
   }
@@ -116,10 +111,10 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "npx rhachet validate --tool $TOOL_NAME",
-            "timeout": 60
+            "timeout": 60,
+            "author": "repo=myapp/role=mechanic"
           }
-        ],
-        "author": "repo=myapp/role=mechanic"
+        ]
       }
     ],
     "Stop": []
@@ -139,10 +134,10 @@ exports[`brainHooksAdapter.blackbox given: [case1] a series of set and del opera
           {
             "type": "command",
             "command": "npx rhachet validate --tool $TOOL_NAME",
-            "timeout": 90
+            "timeout": 90,
+            "author": "repo=myapp/role=mechanic"
           }
-        ],
-        "author": "repo=myapp/role=mechanic"
+        ]
       }
     ],
     "Stop": []

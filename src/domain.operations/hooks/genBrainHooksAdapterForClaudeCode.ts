@@ -1,6 +1,7 @@
 import type { BrainHook, BrainHookEvent, BrainHooksAdapter } from 'rhachet';
 
 import type {
+  ClaudeCodeHook,
   ClaudeCodeHookEntry,
   ClaudeCodeHookEventName,
 } from './config.dao';
@@ -110,25 +111,42 @@ export const genBrainHooksAdapterForClaudeCode = (input: {
           const settings = await readClaudeCodeSettings({ from: repoPath });
 
           // translate to claude code format
-          const { event, entry } = translateHookToClaudeCode({ hook });
+          const {
+            event,
+            matcher,
+            hook: claudeHook,
+          } = translateHookToClaudeCode({ hook });
 
           // ensure hooks section exists
           const hooksSection = settings.hooks ?? {};
-          const eventHooks = hooksSection[event] ?? [];
+          const eventHooks = [...(hooksSection[event] ?? [])];
 
-          // find and replace or append - match by author and command
-          const hookIndex = eventHooks.findIndex(
-            (e: ClaudeCodeHookEntry) =>
-              e.author === hook.author &&
-              e.hooks.some(
-                (h: { command: string }) => h.command === hook.command,
-              ),
+          // find entry with same matcher
+          const entryIndex = eventHooks.findIndex(
+            (e: ClaudeCodeHookEntry) => e.matcher === matcher,
           );
 
-          if (hookIndex >= 0) {
-            eventHooks[hookIndex] = entry;
+          if (entryIndex >= 0) {
+            // entry exists - find and replace or append hook
+            const entry = eventHooks[entryIndex] as ClaudeCodeHookEntry;
+            const hookIndex = entry.hooks.findIndex(
+              (h: ClaudeCodeHook) =>
+                h.author === hook.author && h.command === hook.command,
+            );
+
+            if (hookIndex >= 0) {
+              // replace hook
+              entry.hooks[hookIndex] = claudeHook;
+            } else {
+              // append hook to entry
+              entry.hooks.push(claudeHook);
+            }
           } else {
-            eventHooks.push(entry);
+            // create new entry with this hook
+            eventHooks.push({
+              matcher,
+              hooks: [claudeHook],
+            });
           }
 
           // write back
@@ -160,20 +178,28 @@ export const genBrainHooksAdapterForClaudeCode = (input: {
         // map event to claude code event name
         const claudeEvent = EVENT_MAP[event];
 
-        // find and remove
+        // find and remove hook from entries
         const hooksSection = settings.hooks ?? {};
-        const eventHooks = hooksSection[claudeEvent] ?? [];
+        const eventHooks = [...(hooksSection[claudeEvent] ?? [])];
+        let didChange = false;
 
+        for (const entry of eventHooks) {
+          const hookIndex = entry.hooks.findIndex(
+            (h: ClaudeCodeHook) => h.author === author && h.command === command,
+          );
+          if (hookIndex >= 0) {
+            entry.hooks.splice(hookIndex, 1);
+            didChange = true;
+          }
+        }
+
+        // remove empty entries
         const filtered = eventHooks.filter(
-          (e: ClaudeCodeHookEntry) =>
-            !(
-              e.author === author &&
-              e.hooks.some((h: { command: string }) => h.command === command)
-            ),
+          (e: ClaudeCodeHookEntry) => e.hooks.length > 0,
         );
 
         // write back if changed
-        if (filtered.length !== eventHooks.length) {
+        if (didChange) {
           const settingsUpdated = {
             ...settings,
             hooks: {

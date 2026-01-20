@@ -1,0 +1,35 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`translateHook given: [case1] translateHookToClaudeCode when: [t7] full hook translation then: result matches snapshot 1`] = `
+{
+  "event": "PreToolUse",
+  "hook": {
+    "author": "repo=myapp/role=mechanic",
+    "command": "npx rhachet validate --tool $TOOL_NAME",
+    "timeout": 60,
+    "type": "command",
+  },
+  "matcher": "Bash",
+}
+`;
+
+exports[`translateHook given: [case2] translateHookFromClaudeCode when: [t10] entry with multiple hooks from different authors then: result matches snapshot 1`] = `
+[
+  {
+    "author": "repo=app/role=mechanic",
+    "command": "echo first",
+    "event": "onBoot",
+    "timeout": {
+      "seconds": 30,
+    },
+  },
+  {
+    "author": "repo=app/role=reviewer",
+    "command": "echo second",
+    "event": "onBoot",
+    "timeout": {
+      "seconds": 60,
+    },
+  },
+]
+`;

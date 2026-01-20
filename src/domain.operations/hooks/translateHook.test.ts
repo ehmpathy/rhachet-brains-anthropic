@@ -56,7 +56,7 @@ describe('translateHook', () => {
           timeout: { seconds: 60 },
         };
         const result = translateHookToClaudeCode({ hook });
-        expect(result.entry.hooks[0]?.timeout).toEqual(60);
+        expect(result.hook.timeout).toEqual(60);
       });
 
       then('handles milliseconds input', () => {
@@ -67,7 +67,7 @@ describe('translateHook', () => {
           timeout: { milliseconds: 5000 },
         };
         const result = translateHookToClaudeCode({ hook });
-        expect(result.entry.hooks[0]?.timeout).toEqual(5);
+        expect(result.hook.timeout).toEqual(5);
       });
     });
 
@@ -81,7 +81,7 @@ describe('translateHook', () => {
           filter: { what: 'Bash' },
         };
         const result = translateHookToClaudeCode({ hook });
-        expect(result.entry.matcher).toEqual('Bash');
+        expect(result.matcher).toEqual('Bash');
       });
     });
 
@@ -94,12 +94,12 @@ describe('translateHook', () => {
           timeout: { seconds: 30 },
         };
         const result = translateHookToClaudeCode({ hook });
-        expect(result.entry.matcher).toEqual('*');
+        expect(result.matcher).toEqual('*');
       });
     });
 
     when('[t6] hook with author', () => {
-      then('sets entry.author', () => {
+      then('sets hook.author', () => {
         const hook: BrainHook = {
           author: 'repo=myrepo/role=myrole',
           event: 'onBoot',
@@ -107,7 +107,21 @@ describe('translateHook', () => {
           timeout: { seconds: 30 },
         };
         const result = translateHookToClaudeCode({ hook });
-        expect(result.entry.author).toEqual('repo=myrepo/role=myrole');
+        expect(result.hook.author).toEqual('repo=myrepo/role=myrole');
+      });
+    });
+
+    when('[t7] full hook translation', () => {
+      then('result matches snapshot', () => {
+        const hook: BrainHook = {
+          author: 'repo=myapp/role=mechanic',
+          event: 'onTool',
+          command: 'npx rhachet validate --tool $TOOL_NAME',
+          timeout: { seconds: 60 },
+          filter: { what: 'Bash' },
+        };
+        const result = translateHookToClaudeCode({ hook });
+        expect(result).toMatchSnapshot();
       });
     });
   });
@@ -119,8 +133,13 @@ describe('translateHook', () => {
           event: 'SessionStart',
           entry: {
             matcher: '*',
-            hooks: [{ type: 'command', command: 'echo boot' }],
-            author: 'repo=test/role=mechanic',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo boot',
+                author: 'repo=test/role=mechanic',
+              },
+            ],
           },
         });
         expect(result).toHaveLength(1);
@@ -134,8 +153,13 @@ describe('translateHook', () => {
           event: 'PreToolUse',
           entry: {
             matcher: 'Bash',
-            hooks: [{ type: 'command', command: 'echo bash' }],
-            author: 'repo=test/role=mechanic',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo bash',
+                author: 'repo=test/role=mechanic',
+              },
+            ],
           },
         });
         expect(result).toHaveLength(1);
@@ -149,8 +173,13 @@ describe('translateHook', () => {
           event: 'Stop',
           entry: {
             matcher: '*',
-            hooks: [{ type: 'command', command: 'echo stop' }],
-            author: 'repo=test/role=mechanic',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo stop',
+                author: 'repo=test/role=mechanic',
+              },
+            ],
           },
         });
         expect(result).toHaveLength(1);
@@ -164,8 +193,14 @@ describe('translateHook', () => {
           event: 'SessionStart',
           entry: {
             matcher: '*',
-            hooks: [{ type: 'command', command: 'echo test', timeout: 60 }],
-            author: 'repo=test/role=mechanic',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo test',
+                timeout: 60,
+                author: 'repo=test/role=mechanic',
+              },
+            ],
           },
         });
         expect(result[0]?.timeout).toEqual({ seconds: 60 });
@@ -178,8 +213,13 @@ describe('translateHook', () => {
           event: 'SessionStart',
           entry: {
             matcher: '*',
-            hooks: [{ type: 'command', command: 'echo test' }],
-            author: 'repo=test/role=mechanic',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo test',
+                author: 'repo=test/role=mechanic',
+              },
+            ],
           },
         });
         expect(result[0]?.timeout).toEqual({ seconds: 30 });
@@ -192,8 +232,13 @@ describe('translateHook', () => {
           event: 'PreToolUse',
           entry: {
             matcher: 'Write',
-            hooks: [{ type: 'command', command: 'echo write' }],
-            author: 'repo=test/role=mechanic',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo write',
+                author: 'repo=test/role=mechanic',
+              },
+            ],
           },
         });
         expect(result[0]?.filter).toEqual({ what: 'Write' });
@@ -206,29 +251,39 @@ describe('translateHook', () => {
           event: 'SessionStart',
           entry: {
             matcher: '*',
-            hooks: [{ type: 'command', command: 'echo start' }],
-            author: 'repo=test/role=mechanic',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo start',
+                author: 'repo=test/role=mechanic',
+              },
+            ],
           },
         });
         expect(result[0]?.filter).toBeUndefined();
       });
     });
 
-    when('[t7] entry.author is present', () => {
-      then('sets hook.author from entry', () => {
+    when('[t7] hook.author is present', () => {
+      then('sets hook.author from each hook', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
           entry: {
             matcher: '*',
-            hooks: [{ type: 'command', command: 'echo test' }],
-            author: 'repo=myrepo/role=myrole',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo test',
+                author: 'repo=myrepo/role=myrole',
+              },
+            ],
           },
         });
         expect(result[0]?.author).toEqual('repo=myrepo/role=myrole');
       });
     });
 
-    when('[t8] no author attribute', () => {
+    when('[t8] no author on hook', () => {
       then('defaults to "unknown"', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
@@ -254,24 +309,62 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t10] entry with multiple hooks', () => {
-      then('returns multiple BrainHook objects', () => {
+    when('[t10] entry with multiple hooks from different authors', () => {
+      then('returns multiple BrainHook objects with correct authors', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
           entry: {
             matcher: '*',
             hooks: [
-              { type: 'command', command: 'echo first' },
-              { type: 'command', command: 'echo second' },
-              { type: 'command', command: 'echo third' },
+              {
+                type: 'command',
+                command: 'echo first',
+                author: 'repo=app/role=mechanic',
+              },
+              {
+                type: 'command',
+                command: 'echo second',
+                author: 'repo=app/role=reviewer',
+              },
+              {
+                type: 'command',
+                command: 'echo third',
+                author: 'repo=other/role=behaver',
+              },
             ],
-            author: 'repo=test/role=mechanic',
           },
         });
         expect(result).toHaveLength(3);
         expect(result[0]?.command).toEqual('echo first');
+        expect(result[0]?.author).toEqual('repo=app/role=mechanic');
         expect(result[1]?.command).toEqual('echo second');
+        expect(result[1]?.author).toEqual('repo=app/role=reviewer');
         expect(result[2]?.command).toEqual('echo third');
+        expect(result[2]?.author).toEqual('repo=other/role=behaver');
+      });
+
+      then('result matches snapshot', () => {
+        const result = translateHookFromClaudeCode({
+          event: 'SessionStart',
+          entry: {
+            matcher: '*',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo first',
+                timeout: 30,
+                author: 'repo=app/role=mechanic',
+              },
+              {
+                type: 'command',
+                command: 'echo second',
+                timeout: 60,
+                author: 'repo=app/role=reviewer',
+              },
+            ],
+          },
+        });
+        expect(result).toMatchSnapshot();
       });
     });
   });
@@ -288,9 +381,16 @@ describe('translateHook', () => {
         };
 
         const claudeFormat = translateHookToClaudeCode({ hook: original });
+
+        // reconstruct entry for round-trip
+        const entry = {
+          matcher: claudeFormat.matcher,
+          hooks: [claudeFormat.hook],
+        };
+
         const restored = translateHookFromClaudeCode({
           event: claudeFormat.event,
-          entry: claudeFormat.entry,
+          entry,
         });
 
         expect(restored).toHaveLength(1);

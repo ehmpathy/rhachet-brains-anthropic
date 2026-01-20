@@ -2,17 +2,23 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 /**
+ * .what = shape of a single hook within a claude code entry
+ * .why = each hook has its own author for traceability
+ */
+export interface ClaudeCodeHook {
+  type: string;
+  command: string;
+  timeout?: number;
+  author?: string; // rhachet namespace, ignored by claude code
+}
+
+/**
  * .what = shape of a claude code hook entry in settings.json
- * .why = typed representation for read/write operations
+ * .why = groups hooks by matcher for cleaner config
  */
 export interface ClaudeCodeHookEntry {
   matcher: string;
-  hooks: Array<{
-    type: string;
-    command: string;
-    timeout?: number;
-  }>;
-  author?: string; // rhachet namespace, ignored by claude code
+  hooks: ClaudeCodeHook[];
 }
 
 /**
