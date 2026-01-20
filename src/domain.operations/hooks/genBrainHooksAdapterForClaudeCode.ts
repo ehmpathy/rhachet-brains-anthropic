@@ -105,6 +105,9 @@ export const genBrainHooksAdapterForClaudeCode = (input: {
         /**
          * .what = inserts or updates a hook
          * .why = enables sync to update hooks declaratively
+         *
+         * .note = always removes hook from incorrect matchers (orphan cleanup)
+         * .note = updates in place if already in correct matcher
          */
         async upsert(query) {
           const { hook } = query;
@@ -121,40 +124,58 @@ export const genBrainHooksAdapterForClaudeCode = (input: {
           const hooksSection = settings.hooks ?? {};
           const eventHooks = [...(hooksSection[event] ?? [])];
 
-          // find entry with same matcher
-          const entryIndex = eventHooks.findIndex(
-            (e: ClaudeCodeHookEntry) => e.matcher === matcher,
-          );
-
-          if (entryIndex >= 0) {
-            // entry exists - find and replace or append hook
-            const entry = eventHooks[entryIndex] as ClaudeCodeHookEntry;
-            const hookIndex = entry.hooks.findIndex(
+          // always remove from incorrect matchers (orphan cleanup)
+          for (const entry of eventHooks) {
+            if (entry.matcher === matcher) continue; // skip correct matcher
+            const existingIndex = entry.hooks.findIndex(
               (h: ClaudeCodeHook) =>
                 h.author === hook.author && h.command === hook.command,
             );
-
-            if (hookIndex >= 0) {
-              // replace hook
-              entry.hooks[hookIndex] = claudeHook;
-            } else {
-              // append hook to entry
-              entry.hooks.push(claudeHook);
+            if (existingIndex >= 0) {
+              entry.hooks.splice(existingIndex, 1);
             }
+          }
+
+          // find target entry (correct matcher)
+          const targetEntry = eventHooks.find(
+            (e: ClaudeCodeHookEntry) => e.matcher === matcher,
+          );
+
+          // check if hook already exists in target entry
+          const existingInTarget = targetEntry?.hooks.findIndex(
+            (h: ClaudeCodeHook) =>
+              h.author === hook.author && h.command === hook.command,
+          );
+
+          if (
+            targetEntry &&
+            existingInTarget !== undefined &&
+            existingInTarget >= 0
+          ) {
+            // hook exists in correct matcher - update in place
+            targetEntry.hooks[existingInTarget] = claudeHook;
+          } else if (targetEntry) {
+            // target entry exists but hook not in it - append
+            targetEntry.hooks.push(claudeHook);
           } else {
-            // create new entry with this hook
+            // no target entry - create new
             eventHooks.push({
               matcher,
               hooks: [claudeHook],
             });
           }
 
+          // remove any entries that became empty after cleanup
+          const filtered = eventHooks.filter(
+            (e: ClaudeCodeHookEntry) => e.hooks.length > 0,
+          );
+
           // write back
           const settingsUpdated = {
             ...settings,
             hooks: {
               ...hooksSection,
-              [event]: eventHooks,
+              [event]: filtered,
             },
           };
 
@@ -168,8 +189,10 @@ export const genBrainHooksAdapterForClaudeCode = (input: {
       },
 
       /**
-       * .what = removes a hook by unique key
+       * .what = removes a hook by unique key (author + event + command)
        * .why = enables cleanup when role hooks change
+       *
+       * .note = deletes from ALL matcher entries - cleans up orphans across matchers
        */
       async del(query) {
         const { author, event, command } = query.by.unique;
@@ -178,7 +201,7 @@ export const genBrainHooksAdapterForClaudeCode = (input: {
         // map event to claude code event name
         const claudeEvent = EVENT_MAP[event];
 
-        // find and remove hook from entries
+        // find and remove hook from ALL entries (cleans up orphans across matchers)
         const hooksSection = settings.hooks ?? {};
         const eventHooks = [...(hooksSection[claudeEvent] ?? [])];
         let didChange = false;
