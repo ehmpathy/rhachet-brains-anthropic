@@ -461,7 +461,126 @@ describe('genBrainHooksAdapterForClaudeCode.integration', () => {
     });
   });
 
-  given('[case8] multiple authors', () => {
+  given('[case8] orphan detection - same command different matchers', () => {
+    let repoPath: string;
+
+    beforeEach(async () => {
+      repoPath = path.join(
+        os.tmpdir(),
+        `claude-adapter-test-${Date.now()}-case8`,
+      );
+      await fs.mkdir(repoPath, { recursive: true });
+
+      // simulate orphan scenario: same command exists under Write, Edit, and Write|Edit matchers
+      const settingsWithOrphans = {
+        hooks: {
+          PreToolUse: [
+            {
+              matcher: 'Write',
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'echo check-gerunds',
+                  timeout: 5,
+                  author: 'repo=test/role=mechanic',
+                },
+              ],
+            },
+            {
+              matcher: 'Edit',
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'echo check-gerunds',
+                  timeout: 5,
+                  author: 'repo=test/role=mechanic',
+                },
+              ],
+            },
+            {
+              matcher: 'Write|Edit',
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'echo check-gerunds',
+                  timeout: 5,
+                  author: 'repo=test/role=mechanic',
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      await fs.mkdir(path.join(repoPath, '.claude'), { recursive: true });
+      await fs.writeFile(
+        path.join(repoPath, '.claude', 'settings.json'),
+        JSON.stringify(settingsWithOrphans, null, 2) + '\n',
+      );
+    });
+
+    when('[t0] dao.get.all is called', () => {
+      then(
+        'returns 3 independent hooks with different filter.what',
+        async () => {
+          const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+          const hooks = await adapter.dao.get.all();
+
+          expect(hooks).toHaveLength(3);
+
+          // each hook is independent with its own filter.what
+          const filters = hooks.map((h) => h.filter?.what).sort();
+          expect(filters).toEqual(['Edit', 'Write', 'Write|Edit']);
+
+          // all have same command and author
+          expect(hooks.every((h) => h.command === 'echo check-gerunds')).toBe(
+            true,
+          );
+          expect(
+            hooks.every((h) => h.author === 'repo=test/role=mechanic'),
+          ).toBe(true);
+        },
+      );
+    });
+
+    when('[t1] dao.get.all with author filter', () => {
+      then('returns all 3 hooks for that author', async () => {
+        const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+        const hooks = await adapter.dao.get.all({
+          by: { author: 'repo=test/role=mechanic' },
+        });
+
+        expect(hooks).toHaveLength(3);
+      });
+    });
+
+    when('[t2] rhachet upserts hook with Write|Edit filter', () => {
+      then(
+        'orphans (Write and Edit) are automatically cleaned up',
+        async () => {
+          const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+
+          // rhachet just upserts the hook with the correct filter
+          // adapter handles orphan cleanup across all matchers
+          await adapter.dao.set.upsert({
+            hook: {
+              author: 'repo=test/role=mechanic',
+              event: 'onTool',
+              command: 'echo check-gerunds',
+              timeout: { seconds: 5 },
+              filter: { what: 'Write|Edit' },
+            },
+          });
+
+          const hooks = await adapter.dao.get.all();
+          expect(hooks).toHaveLength(1);
+          expect(hooks[0]?.filter?.what).toEqual('Write|Edit');
+        },
+      );
+    });
+  });
+
+  given('[case9] multiple authors', () => {
     let repoPath: string;
     const hookAuthorA: BrainHook = {
       author: 'repo=test/role=alpha',
