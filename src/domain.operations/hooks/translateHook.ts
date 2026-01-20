@@ -2,6 +2,7 @@ import { toMilliseconds } from 'iso-time';
 import type { BrainHook, BrainHookEvent } from 'rhachet';
 
 import type {
+  ClaudeCodeHook,
   ClaudeCodeHookEntry,
   ClaudeCodeHookEventName,
 } from './config.dao';
@@ -27,12 +28,16 @@ const REVERSE_EVENT_MAP: Record<string, BrainHookEvent> = {
 };
 
 /**
- * .what = translates a rhachet BrainHook to claude code hook entry format
+ * .what = translates a rhachet BrainHook to claude code hook format
  * .why = bridges rhachet hook model to claude code settings.json structure
  */
 export const translateHookToClaudeCode = (input: {
   hook: BrainHook;
-}): { event: ClaudeCodeHookEventName; entry: ClaudeCodeHookEntry } => {
+}): {
+  event: ClaudeCodeHookEventName;
+  matcher: string;
+  hook: ClaudeCodeHook;
+} => {
   const { hook } = input;
 
   // determine the matcher based on filter
@@ -41,22 +46,18 @@ export const translateHookToClaudeCode = (input: {
   // convert IsoDuration to seconds for claude code
   const timeoutSeconds = Math.round(toMilliseconds(hook.timeout) / 1000);
 
-  // build the claude code hook entry
-  const entry: ClaudeCodeHookEntry = {
-    matcher,
-    hooks: [
-      {
-        type: 'command',
-        command: hook.command,
-        ...(timeoutSeconds && { timeout: timeoutSeconds }),
-      },
-    ],
+  // build the claude code hook with author inside
+  const claudeHook: ClaudeCodeHook = {
+    type: 'command',
+    command: hook.command,
+    ...(timeoutSeconds && { timeout: timeoutSeconds }),
     author: hook.author,
   };
 
   return {
     event: EVENT_MAP[hook.event],
-    entry,
+    matcher,
+    hook: claudeHook,
   };
 };
 
@@ -65,7 +66,7 @@ export const translateHookToClaudeCode = (input: {
  * .why = enables read of hooks from claude code settings
  *
  * .note = each hook in the entry becomes a separate BrainHook
- * .note = author is read from entry.author, defaults to 'unknown'
+ * .note = author is read from each hook, defaults to 'unknown'
  */
 export const translateHookFromClaudeCode = (input: {
   event: string;
@@ -77,12 +78,9 @@ export const translateHookFromClaudeCode = (input: {
   const rhachetEvent = REVERSE_EVENT_MAP[event];
   if (!rhachetEvent) return [];
 
-  // extract author from entry attribute
-  const author = entry.author ?? 'unknown';
-
   // each hook in the entry becomes a separate BrainHook
   return entry.hooks.map((h) => ({
-    author,
+    author: h.author ?? 'unknown',
     event: rhachetEvent,
     command: h.command,
     timeout: h.timeout ? { seconds: h.timeout } : { seconds: 30 },

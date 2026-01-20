@@ -32,8 +32,13 @@ describe('config.dao', () => {
             SessionStart: [
               {
                 matcher: '*',
-                hooks: [{ type: 'command', command: 'echo hello' }],
-                author: 'repo=test/role=mechanic',
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'echo hello',
+                    author: 'repo=test/role=mechanic',
+                  },
+                ],
               },
             ],
           },
@@ -217,8 +222,13 @@ describe('config.dao', () => {
         SessionStart: [
           {
             matcher: '*',
-            hooks: [{ type: 'command', command: 'echo old-start' }],
-            author: 'repo=old/role=test',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo old-start',
+                author: 'repo=old/role=test',
+              },
+            ],
           },
         ],
         PreToolUse: [
@@ -267,8 +277,13 @@ describe('config.dao', () => {
             SessionStart: [
               {
                 matcher: '*',
-                hooks: [{ type: 'command', command: 'echo new-start' }],
-                author: 'repo=new/role=mechanic',
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'echo new-start',
+                    author: 'repo=new/role=mechanic',
+                  },
+                ],
               },
             ],
           },
@@ -495,7 +510,7 @@ describe('config.dao', () => {
     });
   });
 
-  given('[case7] hook entry with author attribute', () => {
+  given('[case7] hook with author attribute', () => {
     let repoPath: string;
 
     beforeAll(async () => {
@@ -503,15 +518,20 @@ describe('config.dao', () => {
       await fs.mkdir(repoPath, { recursive: true });
     });
 
-    when('[t0] write entry with author="repo=test/role=mechanic"', () => {
-      then('author attribute is persisted', async () => {
+    when('[t0] write hook with author="repo=test/role=mechanic"', () => {
+      then('author attribute is persisted on hook', async () => {
         const settings: ClaudeCodeSettings = {
           hooks: {
             SessionStart: [
               {
                 matcher: '*',
-                hooks: [{ type: 'command', command: 'echo hello' }],
-                author: 'repo=test/role=mechanic',
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'echo hello',
+                    author: 'repo=test/role=mechanic',
+                  },
+                ],
               },
             ],
           },
@@ -523,21 +543,26 @@ describe('config.dao', () => {
           'utf-8',
         );
         const parsed = JSON.parse(content);
-        expect(parsed.hooks.SessionStart[0].author).toEqual(
+        expect(parsed.hooks.SessionStart[0].hooks[0].author).toEqual(
           'repo=test/role=mechanic',
         );
       });
     });
 
     when('[t1] read settings back', () => {
-      then('author attribute is present on entry', async () => {
+      then('author attribute is present on each hook', async () => {
         const settings: ClaudeCodeSettings = {
           hooks: {
             SessionStart: [
               {
                 matcher: '*',
-                hooks: [{ type: 'command', command: 'echo hello' }],
-                author: 'repo=test/role=mechanic',
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'echo hello',
+                    author: 'repo=test/role=mechanic',
+                  },
+                ],
               },
             ],
           },
@@ -545,7 +570,7 @@ describe('config.dao', () => {
         await writeClaudeCodeSettings({ settings, to: repoPath });
 
         const settingsRead = await readClaudeCodeSettings({ from: repoPath });
-        expect(settingsRead.hooks?.SessionStart?.[0]?.author).toEqual(
+        expect(settingsRead.hooks?.SessionStart?.[0]?.hooks[0]?.author).toEqual(
           'repo=test/role=mechanic',
         );
       });
