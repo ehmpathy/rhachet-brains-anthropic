@@ -20,6 +20,9 @@ importers:
       helpful-errors:
         specifier: 1.5.3
         version: 1.5.3
+      iso-price:
+        specifier: 1.1.1
+        version: 1.1.1(domain-objects@0.31.9)
       iso-time:
         specifier: 1.11.1
         version: 1.11.1
@@ -91,8 +94,8 @@ importers:
         specifier: 30.2.0
         version: 30.2.0(@types/node@22.15.21)(esbuild-register@3.6.0(esbuild@0.25.12))(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.15.21)(typescript@5.4.5))
       rhachet:
-        specifier: 1.25.2
-        version: 1.25.2(zod@4.3.4)
+        specifier: 1.26.0
+        version: 1.26.0(zod@4.3.4)
       rhachet-roles-bhrain:
         specifier: 0.5.9
         version: 0.5.9(@types/node@22.15.21)(hono@4.11.3)
@@ -103,8 +106,8 @@ importers:
         specifier: 1.17.15
         version: 1.17.15(@anthropic-ai/sdk@0.71.2(zod@4.3.4))(@types/node@22.15.21)(hono@4.11.3)(zod@4.3.4)
       test-fns:
-        specifier: 1.7.2
-        version: 1.7.2
+        specifier: 1.10.0
+        version: 1.10.0(@anthropic-ai/sdk@0.71.2(zod@4.3.4))(@types/node@22.15.21)(hono@4.11.3)(zod@4.3.4)
       tsc-alias:
         specifier: 1.8.10
         version: 1.8.10
@@ -2578,8 +2581,8 @@ packages:
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
 
-  emoji-space-shim@0.1.2:
-    resolution: {integrity: sha512-xt2hbs/B5D6aKHn8w0iXwsi8+smE0aJxGp0sjNPlBU3+JDbhGbrugNZdfJ5om3AI+gMvupeFUnVOWG696kjQVA==}
+  emoji-space-shim@0.1.3:
+    resolution: {integrity: sha512-kBblE25OLjkfjLzy5NzeaAmk+4YdB+jWmPZ72l+Wk+cZPpov6w2QI8viICxhNX8s3gNdhiLIfNfnk/NykCBsFw==}
     engines: {node: '>=8.0.0'}
 
   encodeurl@2.0.0:
@@ -3120,6 +3123,18 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+
+  iso-price@1.0.3:
+    resolution: {integrity: sha512-AA2vG0SZcdyj2rtTXT827lsgey+68xMzfDpq9jCylgH59sUFFIWHF/R2Y5VydlJ+l+dHNFx1ZCx4fuDQpfvHgw==}
+    engines: {node: '>=8.0.0'}
+    peerDependencies:
+      domain-objects: '>=0.24.2'
+
+  iso-price@1.1.1:
+    resolution: {integrity: sha512-PixJ5kwVU4mrYnDvOEJHJpytPAT5G8R6ImRB+yJd/OQRP0hb8Y13tFqATu2MCN7rGMB6+hu/3HN7ORezjnoUBw==}
+    engines: {node: '>=8.0.0'}
+    peerDependencies:
+      domain-objects: '>=0.24.2'
 
   iso-time@1.10.1:
     resolution: {integrity: sha512-3BQe0H4ZPM7O1w3TIxwoRSCf9gQ/h+dzcbOEn8Dos3OByQ0mLRV1tqnk0hwzjnXYNgXjWHxF2dHZVq2rdfpnWg==}
@@ -3952,8 +3967,8 @@ packages:
     engines: {node: '>=22.0.0'}
     hasBin: true
 
-  rhachet@1.25.2:
-    resolution: {integrity: sha512-y0d+HdU1RtDf2qog7zGPgSsWUltDuHjrFzynCx13hz/KtanRo7LyoAvEnkYobWwtgFaZ8WU0inyVq6wh6RF6WQ==}
+  rhachet@1.26.0:
+    resolution: {integrity: sha512-DWh1ea9t/LHQMNOVBg8IDXvtjOwutEplYIPjliLqQr0F82GZuDXkgjv4wZh9HKfiASeFjIP4d+LTDui2IpsL6A==}
     engines: {node: '>=22.0.0'}
     hasBin: true
     peerDependencies:
@@ -4203,6 +4218,10 @@ packages:
   test-exclude@6.0.0:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
     engines: {node: '>=8'}
+
+  test-fns@1.10.0:
+    resolution: {integrity: sha512-QiPeBVPziqxmKbu8FeqrT9PNQN2e/e3dpk5kTEpjFyZFJHVVA1q4XejzLsyf/WA+TI2TIEM9ugz/tNOIqtJogw==}
+    engines: {node: '>=8.0.0'}
 
   test-fns@1.4.2:
     resolution: {integrity: sha512-Qz46tRQ7XjiCB5uZM+jLmluZBcp+dKTQ7wisoz8IJtLVUZN+Ta8DWksmTVS/pcdXieKR01gjuukDZHhIDcZvog==}
@@ -7665,7 +7684,7 @@ snapshots:
       domain-objects: 0.31.3
       helpful-errors: 1.5.3
       joi: 17.4.0
-      rhachet: 1.25.2(zod@3.25.76)
+      rhachet: 1.26.0(zod@3.25.76)
       rhachet-roles-ehmpathy: 1.17.15(@anthropic-ai/sdk@0.51.0)(@types/node@22.15.21)(hono@4.11.3)(zod@3.25.76)
       type-fns: 1.21.0
       uuid-fns: 1.1.3
@@ -7686,7 +7705,7 @@ snapshots:
       domain-objects: 0.31.3
       helpful-errors: 1.5.3
       joi: 17.4.0
-      rhachet: 1.25.2(zod@4.3.4)
+      rhachet: 1.26.0(zod@4.3.4)
       rhachet-roles-ehmpathy: 1.17.15(@anthropic-ai/sdk@0.71.2(zod@4.3.4))(@types/node@22.15.21)(hono@4.11.3)(zod@4.3.4)
       type-fns: 1.21.0
       uuid-fns: 1.1.3
@@ -7735,7 +7754,7 @@ snapshots:
 
   emoji-regex@9.2.2: {}
 
-  emoji-space-shim@0.1.2:
+  emoji-space-shim@0.1.3:
     dependencies:
       domain-objects: 0.31.9
       helpful-errors: 1.5.3
@@ -8336,6 +8355,18 @@ snapshots:
   isarray@2.0.5: {}
 
   isexe@2.0.0: {}
+
+  iso-price@1.0.3(domain-objects@0.31.9):
+    dependencies:
+      domain-glossaries: 1.0.0
+      domain-objects: 0.31.9
+      helpful-errors: 1.5.3
+
+  iso-price@1.1.1(domain-objects@0.31.9):
+    dependencies:
+      domain-glossaries: 1.0.0
+      domain-objects: 0.31.9
+      helpful-errors: 1.5.3
 
   iso-time@1.10.1:
     dependencies:
@@ -9489,17 +9520,18 @@ snapshots:
       - ws
       - zod
 
-  rhachet@1.25.2(zod@3.25.76):
+  rhachet@1.26.0(zod@3.25.76):
     dependencies:
       as-procedure: 1.1.11
       bottleneck: 2.19.5
       chalk: 4.1.2
       commander: 14.0.0
       domain-objects: 0.31.9
-      emoji-space-shim: 0.1.2
+      emoji-space-shim: 0.1.3
       fast-glob: 3.3.3
       flattie: 1.1.1
       helpful-errors: 1.5.3
+      iso-price: 1.0.3(domain-objects@0.31.9)
       iso-time: 1.11.1
       openai: 5.8.2(zod@3.25.76)
       rhachet-artifact: 1.0.3
@@ -9513,17 +9545,18 @@ snapshots:
     transitivePeerDependencies:
       - ws
 
-  rhachet@1.25.2(zod@4.3.4):
+  rhachet@1.26.0(zod@4.3.4):
     dependencies:
       as-procedure: 1.1.11
       bottleneck: 2.19.5
       chalk: 4.1.2
       commander: 14.0.0
       domain-objects: 0.31.9
-      emoji-space-shim: 0.1.2
+      emoji-space-shim: 0.1.3
       fast-glob: 3.3.3
       flattie: 1.1.1
       helpful-errors: 1.5.3
+      iso-price: 1.0.3(domain-objects@0.31.9)
       iso-time: 1.11.1
       openai: 5.8.2(zod@4.3.4)
       rhachet-artifact: 1.0.3
@@ -9827,6 +9860,22 @@ snapshots:
       '@istanbuljs/schema': 0.1.3
       glob: 7.2.3
       minimatch: 3.1.2
+
+  test-fns@1.10.0(@anthropic-ai/sdk@0.71.2(zod@4.3.4))(@types/node@22.15.21)(hono@4.11.3)(zod@4.3.4):
+    dependencies:
+      domain-objects: 0.31.7(@anthropic-ai/sdk@0.71.2(zod@4.3.4))(@types/node@22.15.21)(hono@4.11.3)(zod@4.3.4)
+      helpful-errors: 1.5.3
+      uuid: 10.0.0
+    transitivePeerDependencies:
+      - '@anthropic-ai/sdk'
+      - '@cfworker/json-schema'
+      - '@types/node'
+      - aws-crt
+      - debug
+      - hono
+      - supports-color
+      - ws
+      - zod
 
   test-fns@1.4.2:
     dependencies:

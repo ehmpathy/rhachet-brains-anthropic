@@ -1,40 +1,25 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { BrainRepl, castBriefsToPrompt } from 'rhachet';
+import {
+  type BrainOutput,
+  type BrainOutputMetrics,
+  BrainRepl,
+  type BrainSpec,
+  castBriefsToPrompt,
+} from 'rhachet';
+import { calcBrainOutputCost } from 'rhachet/dist/domain.operations/brainCost/calcBrainOutputCost';
 import type { Artifact } from 'rhachet-artifact';
 import type { GitFile } from 'rhachet-artifact-git';
 import type { Empty } from 'type-fns';
 import type { z } from 'zod';
 
 import { asJsonSchema } from '../../infra/schema/asJsonSchema';
+import {
+  type AnthropicBrainReplSlug,
+  CONFIG_BY_REPL_SLUG,
+} from './BrainRepl.config';
 
-/**
- * .what = supported claude code repl slugs
- * .why = enables type-safe slug specification with model variants
- */
-type ClaudeCodeSlug =
-  | 'claude/code'
-  | 'claude/code/haiku'
-  | 'claude/code/haiku/v4.5'
-  | 'claude/code/sonnet'
-  | 'claude/code/sonnet/v4'
-  | 'claude/code/sonnet/v4.5'
-  | 'claude/code/opus'
-  | 'claude/code/opus/v4.5';
-
-/**
- * .what = maps slug to anthropic model identifier
- * .why = translates friendly slugs to API model names
- */
-const MODEL_BY_SLUG: Record<ClaudeCodeSlug, string | undefined> = {
-  'claude/code': undefined, // use SDK default
-  'claude/code/haiku': 'claude-haiku-4-5-20251001',
-  'claude/code/haiku/v4.5': 'claude-haiku-4-5-20251001',
-  'claude/code/sonnet': 'claude-sonnet-4-5-20250929',
-  'claude/code/sonnet/v4': 'claude-sonnet-4-20250514',
-  'claude/code/sonnet/v4.5': 'claude-sonnet-4-5-20250929',
-  'claude/code/opus': 'claude-opus-4-20250514',
-  'claude/code/opus/v4.5': 'claude-opus-4-5-20251101',
-};
+// re-export for consumers
+export { CONFIG_BY_REPL_SLUG, type AnthropicBrainReplSlug };
 
 /**
  * .what = tools disallowed for readonly ask operations
@@ -62,21 +47,69 @@ const TOOLS_ALLOWED_FOR_ACT = [
 ] as const;
 
 /**
+ * .what = result extracted from claude-agent-sdk query
+ * .why = captures both output data and usage metrics from the stream
+ */
+interface QueryResult {
+  output: unknown;
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    cacheGetTokens: number;
+    cacheSetTokens: number;
+  };
+}
+
+/**
  * .what = extracts final result from claude-agent-sdk query async generator
  * .why = query() returns an async iterator, need to consume to get result
  *
  * .note = when outputFormat is used, result may be in structured_output field
+ *
+ * .ref = usage extraction pattern per claude-agent-sdk cost tracking docs
+ *        https://platform.claude.com/docs/en/agent-sdk/cost-tracking
+ *        - result message contains authoritative cumulative usage
+ *        - modelUsage provides per-model breakdown suitable for billing
+ *        - assistant message accumulation would require deduplication by message.id
+ *          (parallel tool uses share same id and report identical usage)
  */
 const extractResultFromQuery = async (
   queryIterator: ReturnType<typeof query>,
-): Promise<unknown> => {
+): Promise<QueryResult> => {
   let result: string | undefined;
   let structuredOutput: unknown | undefined;
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCacheGetTokens = 0;
+  let totalCacheSetTokens = 0;
+
   for await (const message of queryIterator) {
     // check for result message with success subtype
     if (message.type === 'result' && message.subtype === 'success') {
       result = message.result;
       structuredOutput = message.structured_output;
+
+      // extract usage from result message (authoritative cumulative usage)
+      // ref: https://platform.claude.com/docs/en/agent-sdk/cost-tracking
+      const modelUsage = message.modelUsage as
+        | Record<
+            string,
+            {
+              inputTokens?: number;
+              outputTokens?: number;
+              cacheReadInputTokens?: number;
+              cacheCreationInputTokens?: number;
+            }
+          >
+        | undefined;
+      if (modelUsage) {
+        for (const usage of Object.values(modelUsage)) {
+          totalInputTokens += usage.inputTokens ?? 0;
+          totalOutputTokens += usage.outputTokens ?? 0;
+          totalCacheGetTokens += usage.cacheReadInputTokens ?? 0;
+          totalCacheSetTokens += usage.cacheCreationInputTokens ?? 0;
+        }
+      }
     }
 
     // throw on error subtypes
@@ -88,12 +121,24 @@ const extractResultFromQuery = async (
   }
 
   // prefer structured_output when available (used with outputFormat)
-  if (structuredOutput !== undefined) return structuredOutput;
+  const output =
+    structuredOutput !== undefined
+      ? structuredOutput
+      : result !== undefined
+        ? JSON.parse(result)
+        : (() => {
+            throw new Error('no result message received from claude-agent-sdk');
+          })();
 
-  // fall back to parsing result as JSON
-  if (result !== undefined) return JSON.parse(result);
-
-  throw new Error('no result message received from claude-agent-sdk');
+  return {
+    output,
+    usage: {
+      inputTokens: totalInputTokens,
+      outputTokens: totalOutputTokens,
+      cacheGetTokens: totalCacheGetTokens,
+      cacheSetTokens: totalCacheSetTokens,
+    },
+  };
 };
 
 /**
@@ -102,11 +147,14 @@ const extractResultFromQuery = async (
  */
 const invokeQuery = async <TOutput>(input: {
   mode: 'ask' | 'act';
-  model: string | undefined;
+  model: string;
+  spec: BrainSpec;
   role: { briefs?: Artifact<typeof GitFile>[] };
   prompt: string;
   schema: { output: z.Schema<TOutput> };
-}): Promise<TOutput> => {
+}): Promise<BrainOutput<TOutput>> => {
+  const startTime = Date.now();
+
   // compose system prompt from briefs
   const systemPrompt = input.role.briefs
     ? await castBriefsToPrompt({ briefs: input.role.briefs })
@@ -136,10 +184,47 @@ const invokeQuery = async <TOutput>(input: {
   });
 
   // extract final result from async iterator
-  const result = await extractResultFromQuery(queryIterator);
+  const queryResult = await extractResultFromQuery(queryIterator);
 
   // parse output via schema for runtime validation
-  return input.schema.output.parse(result);
+  const output = input.schema.output.parse(queryResult.output);
+
+  // compute metrics
+  const elapsedMs = Date.now() - startTime;
+  const { inputTokens, outputTokens, cacheGetTokens, cacheSetTokens } =
+    queryResult.usage;
+
+  const outputText = JSON.stringify(queryResult.output);
+
+  // build size metrics
+  const size: BrainOutputMetrics['size'] = {
+    tokens: {
+      input: inputTokens,
+      output: outputTokens,
+      cache: { get: cacheGetTokens, set: cacheSetTokens },
+    },
+    chars: {
+      input: input.prompt.length + (systemPrompt?.length ?? 0),
+      output: outputText.length,
+      cache: { get: 0, set: 0 },
+    },
+  };
+
+  // calculate cash cost using rhachet helper
+  const { cash } = calcBrainOutputCost({
+    for: { tokens: size.tokens },
+    with: { cost: { cash: input.spec.cost.cash } },
+  });
+
+  const metrics: BrainOutputMetrics = {
+    size,
+    cost: {
+      time: { milliseconds: elapsedMs },
+      cash,
+    },
+  };
+
+  return { output, metrics };
 };
 
 /**
@@ -151,13 +236,16 @@ const invokeQuery = async <TOutput>(input: {
  *   genBrainRepl({ slug: 'claude/code/haiku' }) // fast + cheap
  *   genBrainRepl({ slug: 'claude/code/opus/v4.5' }) // highest quality
  */
-export const genBrainRepl = (input: { slug: ClaudeCodeSlug }): BrainRepl => {
-  const model = MODEL_BY_SLUG[input.slug];
+export const genBrainRepl = (input: {
+  slug: AnthropicBrainReplSlug;
+}): BrainRepl => {
+  const config = CONFIG_BY_REPL_SLUG[input.slug];
 
   return new BrainRepl({
     repo: 'anthropic',
     slug: input.slug,
     description: `claude code (${input.slug}) - agentic coding assistant with tool use`,
+    spec: config.spec,
 
     /**
      * .what = readonly analysis (research, queries, code review)
@@ -170,7 +258,13 @@ export const genBrainRepl = (input: { slug: ClaudeCodeSlug }): BrainRepl => {
         schema: { output: z.Schema<TOutput> };
       },
       _context?: Empty,
-    ): Promise<TOutput> => invokeQuery({ mode: 'ask', model, ...askInput }),
+    ): Promise<BrainOutput<TOutput>> =>
+      invokeQuery({
+        mode: 'ask',
+        model: config.model,
+        spec: config.spec,
+        ...askInput,
+      }),
 
     /**
      * .what = read+write actions (code changes, file edits)
@@ -183,6 +277,12 @@ export const genBrainRepl = (input: { slug: ClaudeCodeSlug }): BrainRepl => {
         schema: { output: z.Schema<TOutput> };
       },
       _context?: Empty,
-    ): Promise<TOutput> => invokeQuery({ mode: 'act', model, ...actInput }),
+    ): Promise<BrainOutput<TOutput>> =>
+      invokeQuery({
+        mode: 'act',
+        model: config.model,
+        spec: config.spec,
+        ...actInput,
+      }),
   });
 };
