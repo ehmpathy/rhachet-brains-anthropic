@@ -1,7 +1,7 @@
 import { BadRequestError } from 'helpful-errors';
 import path from 'path';
 import { genArtifactGitFile } from 'rhachet-artifact-git';
-import { given, then, when } from 'test-fns';
+import { given, then, useThen, when } from 'test-fns';
 import { z } from 'zod';
 
 import { TEST_ASSETS_DIR } from '../../.test/assets/dir';
@@ -41,15 +41,31 @@ describe('genBrainRepl.integration', () => {
 
   given('[case2] ask is called (readonly mode)', () => {
     when('[t0] with simple prompt', () => {
-      then('it returns a substantive response', async () => {
-        const result = await brainRepl.ask({
+      const result = useThen('it succeeds', async () =>
+        brainRepl.ask({
           role: {},
           prompt: 'respond with exactly: hello from claude code',
           schema: { output: outputSchema },
-        });
-        expect(result.content).toBeDefined();
-        expect(result.content.length).toBeGreaterThan(0);
-        expect(result.content.toLowerCase()).toContain('hello');
+        }),
+      );
+
+      then('it returns a substantive response', () => {
+        expect(result.output.content).toBeDefined();
+        expect(result.output.content.length).toBeGreaterThan(0);
+        expect(result.output.content.toLowerCase()).toContain('hello');
+      });
+
+      then('it returns metrics with token counts', () => {
+        expect(result.metrics).toBeDefined();
+        expect(result.metrics.size.tokens.input).toBeGreaterThan(0);
+        expect(result.metrics.size.tokens.output).toBeGreaterThan(0);
+      });
+
+      then('it returns metrics with cost calculation', () => {
+        expect(result.metrics.cost.cash.total).toBeDefined();
+        expect(result.metrics.cost.cash.deets.input).toBeDefined();
+        expect(result.metrics.cost.cash.deets.output).toBeDefined();
+        expect(result.metrics.cost.time).toBeDefined();
       });
     });
 
@@ -65,8 +81,8 @@ describe('genBrainRepl.integration', () => {
           prompt: 'say hello',
           schema: { output: outputSchema },
         });
-        expect(result.content).toBeDefined();
-        expect(result.content).toContain('ZEBRA42');
+        expect(result.output.content).toBeDefined();
+        expect(result.output.content).toContain('ZEBRA42');
       });
     });
   });
@@ -79,9 +95,9 @@ describe('genBrainRepl.integration', () => {
           prompt: 'respond with exactly: hello from claude code action',
           schema: { output: outputSchema },
         });
-        expect(result.content).toBeDefined();
-        expect(result.content.length).toBeGreaterThan(0);
-        expect(result.content.toLowerCase()).toContain('hello');
+        expect(result.output.content).toBeDefined();
+        expect(result.output.content.length).toBeGreaterThan(0);
+        expect(result.output.content.toLowerCase()).toContain('hello');
       });
     });
   });

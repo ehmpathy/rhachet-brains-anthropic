@@ -18,14 +18,14 @@ import { z } from 'zod';
 const brainAtom = genBrainAtom({ slug: 'claude/sonnet' });
 
 // simple string output
-const explanation = await brainAtom.ask({
+const { output: explanation } = await brainAtom.ask({
   role: { briefs: [] },
   prompt: 'explain this code',
   schema: { output: z.string() },
 });
 
 // structured object output
-const { summary, issues } = await brainAtom.ask({
+const { output: { summary, issues } } = await brainAtom.ask({
   role: { briefs: [] },
   prompt: 'analyze this code',
   schema: { output: z.object({ summary: z.string(), issues: z.array(z.string()) }) },
@@ -35,14 +35,14 @@ const { summary, issues } = await brainAtom.ask({
 const brainRepl = genBrainRepl({ slug: 'claude/code' });
 
 // use ask() for read-only operations
-const { analysis } = await brainRepl.ask({
+const { output: { analysis } } = await brainRepl.ask({
   role: { briefs: [] },
   prompt: 'analyze this codebase',
   schema: { output: z.object({ analysis: z.string() }) },
 });
 
 // use act() for read+write operations
-const { proposal } = await brainRepl.act({
+const { output: { proposal } } = await brainRepl.act({
   role: { briefs: [] },
   prompt: 'refactor this module',
   schema: { output: z.object({ proposal: z.string() }) },
@@ -53,34 +53,34 @@ const { proposal } = await brainRepl.act({
 
 ### atoms (via genBrainAtom)
 
-stateless inference without tool use. uses anthropic api with structured outputs.
+stateless inference without tool use. uses anthropic messages api with structured outputs.
 
-| slug                 | model                      | description                         |
-| -------------------- | -------------------------- | ----------------------------------- |
-| `claude/haiku`       | claude-haiku-4-5-20251001  | fastest and most cost-effective     |
-| `claude/haiku/v3.5`  | claude-3-5-haiku-20241022  | fast and cost-effective             |
-| `claude/haiku/v4.5`  | claude-haiku-4-5-20251001  | fastest and most cost-effective     |
-| `claude/sonnet`      | claude-sonnet-4-5-20250929 | balanced performance and capability |
-| `claude/sonnet/v4`   | claude-sonnet-4-20250514   | balanced performance and capability |
-| `claude/sonnet/v4.5` | claude-sonnet-4-5-20250929 | balanced performance and capability |
-| `claude/opus`        | claude-opus-4-5-20251101   | most capable for complex tasks      |
-| `claude/opus/v4`     | claude-opus-4-20250514     | highly capable for complex tasks    |
-| `claude/opus/v4.5`   | claude-opus-4-5-20251101   | most capable for complex tasks      |
+| slug | model | cost ($/MTok) | cutoff | description |
+| --- | --- | --- | --- | --- |
+| `claude/haiku` | claude-haiku-4-5-20251001 | $1 / $5 | 2025-04 | fastest and most cost-effective |
+| `claude/haiku/v3.5` | claude-3-5-haiku-20241022 | $0.80 / $4 | 2024-04 | fast and cost-effective |
+| `claude/haiku/v4.5` | claude-haiku-4-5-20251001 | $1 / $5 | 2025-04 | fastest and most cost-effective |
+| `claude/sonnet` | claude-sonnet-4-5-20250929 | $3 / $15 | 2025-04 | balanced performance and capability |
+| `claude/sonnet/v4` | claude-sonnet-4-20250514 | $3 / $15 | 2025-04 | balanced performance and capability |
+| `claude/sonnet/v4.5` | claude-sonnet-4-5-20250929 | $3 / $15 | 2025-04 | balanced performance and capability |
+| `claude/opus` | claude-opus-4-5-20251101 | $5 / $25 | 2025-05 | most capable for complex reasoning |
+| `claude/opus/v4` | claude-opus-4-20250514 | $15 / $75 | 2025-04 | highly capable for complex reasoning |
+| `claude/opus/v4.5` | claude-opus-4-5-20251101 | $5 / $25 | 2025-05 | most capable for complex reasoning |
 
 ### repls (via genBrainRepl)
 
-agentic code assistant with tool use via claude-agent-sdk.
+agentic code assistant with tool use via claude-agent-sdk. repl slugs map to atom configs.
 
-| slug                      | model                      | description                         |
-| ------------------------- | -------------------------- | ----------------------------------- |
-| `claude/code`             | sdk default                | uses claude-agent-sdk default model |
-| `claude/code/haiku`       | claude-haiku-4-5-20251001  | fast and cost-effective agent       |
-| `claude/code/haiku/v4.5`  | claude-haiku-4-5-20251001  | fast and cost-effective agent       |
-| `claude/code/sonnet`      | claude-sonnet-4-5-20250929 | balanced agentic capability         |
-| `claude/code/sonnet/v4`   | claude-sonnet-4-20250514   | balanced agentic capability         |
-| `claude/code/sonnet/v4.5` | claude-sonnet-4-5-20250929 | balanced agentic capability         |
-| `claude/code/opus`        | claude-opus-4-20250514     | high capability agent               |
-| `claude/code/opus/v4.5`   | claude-opus-4-5-20251101   | most capable agent                  |
+| slug | atom | cost ($/MTok) | cutoff | description |
+| --- | --- | --- | --- | --- |
+| `claude/code` | `claude/sonnet` | $3 / $15 | 2025-04 | balanced agentic capability |
+| `claude/code/haiku` | `claude/haiku` | $1 / $5 | 2025-04 | fast and cost-effective agent |
+| `claude/code/haiku/v4.5` | `claude/haiku/v4.5` | $1 / $5 | 2025-04 | fast and cost-effective agent |
+| `claude/code/sonnet` | `claude/sonnet` | $3 / $15 | 2025-04 | balanced agentic capability |
+| `claude/code/sonnet/v4` | `claude/sonnet/v4` | $3 / $15 | 2025-04 | balanced agentic capability |
+| `claude/code/sonnet/v4.5` | `claude/sonnet/v4.5` | $3 / $15 | 2025-04 | balanced agentic capability |
+| `claude/code/opus` | `claude/opus` | $5 / $25 | 2025-05 | most capable agent |
+| `claude/code/opus/v4.5` | `claude/opus/v4.5` | $5 / $25 | 2025-05 | most capable agent |
 
 ## sources
 
