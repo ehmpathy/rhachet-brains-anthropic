@@ -1,15 +1,18 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import {
+  type BrainEpisode,
   type BrainOutput,
   type BrainOutputMetrics,
   BrainRepl,
+  type BrainSeries,
   type BrainSpec,
+  calcBrainOutputCost,
   castBriefsToPrompt,
+  genBrainContinuables,
 } from 'rhachet';
-import { calcBrainOutputCost } from 'rhachet/dist/domain.operations/brainCost/calcBrainOutputCost';
 import type { Artifact } from 'rhachet-artifact';
 import type { GitFile } from 'rhachet-artifact-git';
-import type { Empty } from 'type-fns';
+import type { Empty, PickOne } from 'type-fns';
 import type { z } from 'zod';
 
 import { asJsonSchema } from '../../infra/schema/asJsonSchema';
@@ -149,10 +152,11 @@ const invokeQuery = async <TOutput>(input: {
   mode: 'ask' | 'act';
   model: string;
   spec: BrainSpec;
+  on?: { episode?: BrainEpisode; series?: BrainSeries };
   role: { briefs?: Artifact<typeof GitFile>[] };
   prompt: string;
   schema: { output: z.Schema<TOutput> };
-}): Promise<BrainOutput<TOutput>> => {
+}): Promise<BrainOutput<TOutput, 'repl'>> => {
   const startTime = Date.now();
 
   // compose system prompt from briefs
@@ -224,7 +228,25 @@ const invokeQuery = async <TOutput>(input: {
     },
   };
 
-  return { output, metrics };
+  // generate continuables for episode/series tracking
+  const continuables = await genBrainContinuables({
+    for: { grain: 'repl' },
+    on: {
+      episode: input.on?.episode ?? null,
+      series: input.on?.series ?? null,
+    },
+    with: {
+      exchange: {
+        input: input.prompt,
+        output: outputText,
+        exid: null, // claude-agent-sdk doesn't expose message ids
+      },
+      episode: { exid: null },
+      series: { exid: null },
+    },
+  });
+
+  return { output, metrics, ...continuables };
 };
 
 /**
@@ -253,16 +275,21 @@ export const genBrainRepl = (input: {
      */
     ask: async <TOutput>(
       askInput: {
+        on?: PickOne<{ episode: BrainEpisode; series: BrainSeries }>;
         role: { briefs?: Artifact<typeof GitFile>[] };
         prompt: string;
         schema: { output: z.Schema<TOutput> };
       },
       _context?: Empty,
-    ): Promise<BrainOutput<TOutput>> =>
+    ): Promise<BrainOutput<TOutput, 'repl'>> =>
       invokeQuery({
         mode: 'ask',
         model: config.model,
         spec: config.spec,
+        on: {
+          episode: askInput.on?.episode,
+          series: askInput.on?.series,
+        },
         ...askInput,
       }),
 
@@ -272,16 +299,21 @@ export const genBrainRepl = (input: {
      */
     act: async <TOutput>(
       actInput: {
+        on?: PickOne<{ episode: BrainEpisode; series: BrainSeries }>;
         role: { briefs?: Artifact<typeof GitFile>[] };
         prompt: string;
         schema: { output: z.Schema<TOutput> };
       },
       _context?: Empty,
-    ): Promise<BrainOutput<TOutput>> =>
+    ): Promise<BrainOutput<TOutput, 'repl'>> =>
       invokeQuery({
         mode: 'act',
         model: config.model,
         spec: config.spec,
+        on: {
+          episode: actInput.on?.episode,
+          series: actInput.on?.series,
+        },
         ...actInput,
       }),
   });

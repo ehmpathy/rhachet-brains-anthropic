@@ -21,3 +21,4 @@ ignores:
   - rhachet-roles-ehmpathy
   - tsc-alias
   - yalc
+  - rhachet-brains-anthropic
