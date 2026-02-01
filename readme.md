@@ -82,6 +82,68 @@ agentic code assistant with tool use via claude-agent-sdk. repl slugs map to ato
 | `claude/code/opus` | `claude/opus` | $5 / $25 | 2025-05 | most capable agent |
 | `claude/code/opus/v4.5` | `claude/opus/v4.5` | $5 / $25 | 2025-05 | most capable agent |
 
+## episode continuation
+
+rhachet supports multi-turn conversations via episode continuation. each brain output includes an `episode` that can be passed back to continue the conversation.
+
+### atoms (supported)
+
+atoms support episode continuation for cross-supplier workflows. prior exchanges are injected as actual user/assistant messages.
+
+```ts
+const brainAtom = genBrainAtom({ slug: 'claude/sonnet' });
+
+// first turn
+const resultFirst = await brainAtom.ask({
+  role: {},
+  prompt: 'remember this code: MANGO77',
+  schema: { output: z.object({ content: z.string() }) },
+});
+
+// continue the conversation
+const resultSecond = await brainAtom.ask({
+  on: { episode: resultFirst.episode },
+  role: {},
+  prompt: 'what was the code i told you to remember?',
+  schema: { output: z.object({ content: z.string() }) },
+});
+// resultSecond.output.content contains "MANGO77"
+```
+
+**limitations:**
+- haiku does not support continuation with structured outputs (will throw `BadRequestError`)
+- use sonnet or opus for continuation workflows
+
+### repls (not supported)
+
+repls do **not** support episode continuation due to claude-agent-sdk limitations:
+1. session resumption doesn't work with structured outputs (returns plain text)
+2. cross-supplier continuation requires message injection which the sdk doesn't support
+
+```ts
+const brainRepl = genBrainRepl({ slug: 'claude/code' });
+
+// this will throw BadRequestError
+await brainRepl.ask({
+  on: { episode: someEpisode }, // ❌ not supported
+  role: {},
+  prompt: 'continue...',
+  schema: { output: z.object({ content: z.string() }) },
+});
+```
+
+repls still **export** episode/series data for tracking and audit purposes. the `episode.exid` contains session info in the format `anthropic/claude-agent-sdk/{machineHash}/{sessionId}`.
+
+### summary
+
+| brain | continuation | notes |
+| --- | --- | --- |
+| atom (sonnet, opus) | ✅ supported | use `on: { episode }` to continue |
+| atom (haiku) | ❌ not supported | throws `BadRequestError` |
+| repl (all) | ❌ not supported | throws `BadRequestError` |
+
+for workflows requiring continuation, use `genBrainAtom` with sonnet or opus.
+
 ## sources
 
 - [anthropic api documentation](https://docs.anthropic.com/en/api/)

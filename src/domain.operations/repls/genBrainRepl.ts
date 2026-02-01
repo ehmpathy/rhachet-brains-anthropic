@@ -1,5 +1,7 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
+import { createHash } from 'crypto';
 import { BadRequestError } from 'helpful-errors';
+import { hostname } from 'os';
 import {
   type BrainEpisode,
   type BrainOutput,
@@ -21,6 +23,31 @@ import {
   type AnthropicBrainReplSlug,
   CONFIG_BY_REPL_SLUG,
 } from './BrainRepl.config';
+
+/**
+ * .what = prefix for episode exids from this repo
+ * .why = identifies episodes created by anthropic claude-agent-sdk for tracking
+ */
+const EXID_PREFIX = 'anthropic/claude-agent-sdk';
+
+/**
+ * .what = generates a stable hash for the current machine
+ * .why = records which machine the session was created on for debugging
+ */
+const getMachineHash = (): string => {
+  const machineId = [hostname(), process.env.USER ?? 'unknown'].join(':');
+  return createHash('sha256').update(machineId).digest('hex').slice(0, 12);
+};
+
+/**
+ * .what = builds an exid that encodes session info
+ * .why = enables tracking of session origin for debugging and future potential continuation
+ *
+ * .note = continuation is NOT currently supported due to SDK limitations with structured outputs.
+ *         the exid is still recorded for tracking, audit, and potential future support.
+ */
+const buildSessionExid = (input: { sessionId: string }): string =>
+  `${EXID_PREFIX}/${getMachineHash()}/${input.sessionId}`;
 
 // re-export for consumers
 export { CONFIG_BY_REPL_SLUG, type AnthropicBrainReplSlug };
@@ -52,10 +79,11 @@ const TOOLS_ALLOWED_FOR_ACT = [
 
 /**
  * .what = result extracted from claude-agent-sdk query
- * .why = captures output data and usage metrics from the stream
+ * .why = captures output data, usage metrics, and session info from the stream
  */
 interface QueryResult {
   output: unknown;
+  sessionId: string | null;
   usage: {
     inputTokens: number;
     outputTokens: number;
@@ -82,12 +110,18 @@ const extractResultFromQuery = async (
 ): Promise<QueryResult> => {
   let result: string | undefined;
   let structuredOutput: unknown | undefined;
+  let sessionId: string | null = null;
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
   let totalCacheGetTokens = 0;
   let totalCacheSetTokens = 0;
 
   for await (const message of queryIterator) {
+    // capture sessionId from any message (they all carry it)
+    if ('session_id' in message && message.session_id) {
+      sessionId = message.session_id as string;
+    }
+
     // check for result message with success subtype
     if (message.type === 'result' && message.subtype === 'success') {
       result = message.result;
@@ -136,6 +170,7 @@ const extractResultFromQuery = async (
 
   return {
     output,
+    sessionId,
     usage: {
       inputTokens: totalInputTokens,
       outputTokens: totalOutputTokens,
@@ -149,9 +184,11 @@ const extractResultFromQuery = async (
  * .what = invokes claude-agent-sdk query with specified mode
  * .why = dedupes shared logic between ask (readonly) and act (read+write)
  *
- * .note = claude-agent-sdk does not support message injection for episode continuation.
- *         we export episode/series data for tracking, but cannot import prior context.
- *         use BrainAtom if cross-supplier continuation is required.
+ * .note = episode/series continuation is NOT supported for repls because:
+ *         1. claude-agent-sdk session resumption doesn't work with structured outputs
+ *            (resumed sessions return plain text instead of honoring outputFormat)
+ *         2. cross-supplier continuation requires message injection which the SDK doesn't support
+ *         for continuation workflows, use BrainAtom instead.
  */
 const invokeQuery = async <TOutput>(input: {
   mode: 'ask' | 'act';
@@ -162,10 +199,11 @@ const invokeQuery = async <TOutput>(input: {
   prompt: string;
   schema: { output: z.Schema<TOutput> };
 }): Promise<BrainOutput<TOutput, 'repl'>> => {
-  // fail-fast: claude-agent-sdk does not support episode/series continuation
+  // fail-fast: continuation is not supported for repls
+  // claude-agent-sdk session resumption doesn't work with structured outputs
   if (input.on?.episode || input.on?.series) {
     throw new BadRequestError(
-      'episode/series continuation is not supported with claude-agent-sdk repls. the sdk only supports session-based resumption which is not cross-supplier compatible. use BrainAtom for continuation workflows.',
+      'episode/series continuation is not supported with claude-agent-sdk repls. session resumption does not work with structured outputs. use BrainAtom for continuation workflows.',
       { mode: input.mode, model: input.model },
     );
   }
@@ -241,21 +279,26 @@ const invokeQuery = async <TOutput>(input: {
     },
   };
 
-  // generate continuables for episode/series tracking (export only, no import)
+  // build session exid for continuation tracking
+  const sessionExid = queryResult.sessionId
+    ? buildSessionExid({ sessionId: queryResult.sessionId })
+    : null;
+
+  // generate continuables for episode/series tracking
   const continuables = await genBrainContinuables({
     for: { grain: 'repl' },
     on: {
-      episode: null,
-      series: null,
+      episode: input.on?.episode ?? null,
+      series: input.on?.series ?? null,
     },
     with: {
       exchange: {
         input: input.prompt,
         output: outputText,
-        exid: null,
+        exid: sessionExid,
       },
-      episode: { exid: null },
-      series: { exid: null },
+      episode: { exid: sessionExid },
+      series: { exid: sessionExid },
     },
   });
 

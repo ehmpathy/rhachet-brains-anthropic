@@ -102,7 +102,7 @@ describe('genBrainRepl.integration', () => {
     });
   });
 
-  given('[case4] episode and series are returned', () => {
+  given('[case4] episode and series are returned with session exid', () => {
     when('[t0] ask is called', () => {
       const result = useThen('it succeeds', async () =>
         brainRepl.ask({
@@ -116,6 +116,13 @@ describe('genBrainRepl.integration', () => {
         expect(result.episode).toBeDefined();
         expect(result.episode.hash).toBeDefined();
         expect(result.episode.exchanges).toHaveLength(1);
+      });
+
+      then('episode.exid contains session info for continuation', () => {
+        expect(result.episode.exid).toBeDefined();
+        expect(result.episode.exid).toMatch(
+          /^anthropic\/claude-agent-sdk\/[a-f0-9]+\/.+$/,
+        );
       });
 
       then('it returns a series (repls have series unlike atoms)', () => {
