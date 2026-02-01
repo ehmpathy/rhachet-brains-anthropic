@@ -1,7 +1,7 @@
 import { BadRequestError } from 'helpful-errors';
 import path from 'path';
 import { genArtifactGitFile } from 'rhachet-artifact-git';
-import { given, then, useThen, when } from 'test-fns';
+import { getError, given, then, useThen, when } from 'test-fns';
 import { z } from 'zod';
 
 import { TEST_ASSETS_DIR } from '../../.test/assets/dir';
@@ -122,6 +122,33 @@ describe('genBrainRepl.integration', () => {
         expect(result.series).toBeDefined();
         expect(result.series.hash).toBeDefined();
         expect(result.series.episodes).toHaveLength(1);
+      });
+    });
+  });
+
+  given('[case5] episode continuation is not supported (fail-fast)', () => {
+    when('[t0] continuation is attempted with on.episode', () => {
+      then('it throws BadRequestError', async () => {
+        // first, get an episode from a fresh call
+        const resultFirst = await brainRepl.ask({
+          role: {},
+          prompt: 'say hello',
+          schema: { output: outputSchema },
+        });
+
+        // then, attempt continuation with that episode
+        const error = await getError(
+          brainRepl.ask({
+            on: { episode: resultFirst.episode },
+            role: {},
+            prompt: 'what did you say?',
+            schema: { output: outputSchema },
+          }),
+        );
+
+        expect(error).toBeInstanceOf(BadRequestError);
+        expect(error.message).toContain('continuation');
+        expect(error.message).toContain('not supported');
       });
     });
   });

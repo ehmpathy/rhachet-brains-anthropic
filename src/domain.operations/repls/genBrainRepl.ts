@@ -1,4 +1,5 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
+import { BadRequestError } from 'helpful-errors';
 import {
   type BrainEpisode,
   type BrainOutput,
@@ -51,7 +52,7 @@ const TOOLS_ALLOWED_FOR_ACT = [
 
 /**
  * .what = result extracted from claude-agent-sdk query
- * .why = captures both output data and usage metrics from the stream
+ * .why = captures output data and usage metrics from the stream
  */
 interface QueryResult {
   output: unknown;
@@ -147,6 +148,10 @@ const extractResultFromQuery = async (
 /**
  * .what = invokes claude-agent-sdk query with specified mode
  * .why = dedupes shared logic between ask (readonly) and act (read+write)
+ *
+ * .note = claude-agent-sdk does not support message injection for episode continuation.
+ *         we export episode/series data for tracking, but cannot import prior context.
+ *         use BrainAtom if cross-supplier continuation is required.
  */
 const invokeQuery = async <TOutput>(input: {
   mode: 'ask' | 'act';
@@ -157,6 +162,14 @@ const invokeQuery = async <TOutput>(input: {
   prompt: string;
   schema: { output: z.Schema<TOutput> };
 }): Promise<BrainOutput<TOutput, 'repl'>> => {
+  // fail-fast: claude-agent-sdk does not support episode/series continuation
+  if (input.on?.episode || input.on?.series) {
+    throw new BadRequestError(
+      'episode/series continuation is not supported with claude-agent-sdk repls. the sdk only supports session-based resumption which is not cross-supplier compatible. use BrainAtom for continuation workflows.',
+      { mode: input.mode, model: input.model },
+    );
+  }
+
   const startTime = Date.now();
 
   // compose system prompt from briefs
@@ -177,7 +190,7 @@ const invokeQuery = async <TOutput>(input: {
   const queryIterator = query({
     prompt: input.prompt,
     options: {
-      systemPrompt,
+      systemPrompt: systemPrompt || undefined,
       model: input.model,
       ...toolConstraints,
       outputFormat: {
@@ -228,18 +241,18 @@ const invokeQuery = async <TOutput>(input: {
     },
   };
 
-  // generate continuables for episode/series tracking
+  // generate continuables for episode/series tracking (export only, no import)
   const continuables = await genBrainContinuables({
     for: { grain: 'repl' },
     on: {
-      episode: input.on?.episode ?? null,
-      series: input.on?.series ?? null,
+      episode: null,
+      series: null,
     },
     with: {
       exchange: {
         input: input.prompt,
         output: outputText,
-        exid: null, // claude-agent-sdk doesn't expose message ids
+        exid: null,
       },
       episode: { exid: null },
       series: { exid: null },
