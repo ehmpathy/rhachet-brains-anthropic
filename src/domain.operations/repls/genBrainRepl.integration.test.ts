@@ -101,4 +101,28 @@ describe('genBrainRepl.integration', () => {
       });
     });
   });
+
+  given('[case4] episode and series are returned', () => {
+    when('[t0] ask is called', () => {
+      const result = useThen('it succeeds', async () =>
+        brainRepl.ask({
+          role: {},
+          prompt: 'respond with hello',
+          schema: { output: outputSchema },
+        }),
+      );
+
+      then('it returns an episode', () => {
+        expect(result.episode).toBeDefined();
+        expect(result.episode.hash).toBeDefined();
+        expect(result.episode.exchanges).toHaveLength(1);
+      });
+
+      then('it returns a series (repls have series unlike atoms)', () => {
+        expect(result.series).toBeDefined();
+        expect(result.series.hash).toBeDefined();
+        expect(result.series.episodes).toHaveLength(1);
+      });
+    });
+  });
 });

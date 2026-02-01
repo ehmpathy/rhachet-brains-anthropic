@@ -1,12 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
+import { BadRequestError } from 'helpful-errors';
 import {
   BrainAtom,
+  type BrainEpisode,
   type BrainOutput,
   type BrainOutputMetrics,
+  calcBrainOutputCost,
   castBriefsToPrompt,
+  genBrainContinuables,
 } from 'rhachet';
-import { calcBrainOutputCost } from 'rhachet/dist/domain.operations/brainCost/calcBrainOutputCost';
 import type { Artifact } from 'rhachet-artifact';
 import type { GitFile } from 'rhachet-artifact-git';
 import type { Empty } from 'type-fns';
@@ -53,15 +56,22 @@ export const genBrainAtom = (input: {
      */
     ask: async <TOutput>(
       askInput: {
+        on?: { episode: BrainEpisode };
         role: { briefs?: Artifact<typeof GitFile>[] };
         prompt: string;
         schema: { output: z.Schema<TOutput> };
       },
       context?: Empty,
-    ): Promise<BrainOutput<TOutput>> => {
-      const startTime = Date.now();
+    ): Promise<BrainOutput<TOutput, 'atom'>> => {
+      // fail-fast: haiku doesn't support continuation with structured outputs
+      if (askInput.on?.episode && config.model.includes('haiku')) {
+        throw new BadRequestError(
+          'episode continuation is not supported with haiku models when using structured outputs. use sonnet or opus instead.',
+          { slug: input.slug, model: config.model },
+        );
+      }
 
-      // compose system prompt from briefs
+      const startTime = Date.now();
       const systemPrompt = askInput.role.briefs
         ? await castBriefsToPrompt({ briefs: askInput.role.briefs })
         : undefined;
@@ -71,13 +81,24 @@ export const genBrainAtom = (input: {
         (context?.anthropic as Anthropic | undefined) ??
         new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+      // build messages array from prior episode exchanges + current prompt
+      const priorMessages: Anthropic.MessageParam[] =
+        askInput.on?.episode?.exchanges.flatMap((exchange) => [
+          { role: 'user' as const, content: exchange.input },
+          { role: 'assistant' as const, content: exchange.output },
+        ]) ?? [];
+      const messages: Anthropic.MessageParam[] = [
+        ...priorMessages,
+        { role: 'user', content: askInput.prompt },
+      ];
+
       // call anthropic api with native structured output (constrained decoding)
       const response = await anthropic.beta.messages.create({
         model: config.model,
         max_tokens: 16384,
         betas: ['structured-outputs-2025-11-13'],
         system: systemPrompt,
-        messages: [{ role: 'user', content: askInput.prompt }],
+        messages,
         output_format: betaZodOutputFormat(askInput.schema.output),
       });
 
@@ -133,7 +154,21 @@ export const genBrainAtom = (input: {
         },
       };
 
-      return { output, metrics };
+      // generate continuables for episode tracking
+      const continuables = await genBrainContinuables({
+        for: { grain: 'atom' },
+        on: { episode: askInput.on?.episode ?? null },
+        with: {
+          exchange: {
+            input: askInput.prompt,
+            output: outputText,
+            exid: response.id,
+          },
+          episode: { exid: null },
+        },
+      });
+
+      return { output, metrics, ...continuables };
     },
   });
 };
