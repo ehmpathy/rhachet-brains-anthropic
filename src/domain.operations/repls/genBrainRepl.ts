@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import { BadRequestError } from 'helpful-errors';
 import { hostname } from 'os';
 import {
+  type AsBrainPromptFor,
   type BrainEpisode,
   type BrainOutput,
   type BrainOutputMetrics,
@@ -13,6 +14,7 @@ import {
   castBriefsToPrompt,
   genBrainContinuables,
 } from 'rhachet';
+import type { BrainPlugs } from 'rhachet/brains';
 import type { Artifact } from 'rhachet-artifact';
 import type { GitFile } from 'rhachet-artifact-git';
 import type { Empty, PickOne } from 'type-fns';
@@ -186,19 +188,27 @@ const extractResultFromQuery = async (
  *
  * .note = episode/series continuation is NOT supported for repls because:
  *         1. claude-agent-sdk session resumption doesn't work with structured outputs
- *            (resumed sessions return plain text instead of honoring outputFormat)
+ *            (resumed sessions return plain text instead of respect for outputFormat)
  *         2. cross-supplier continuation requires message injection which the SDK doesn't support
  *         for continuation workflows, use BrainAtom instead.
+ *
+ * .note = plugs.tools is accepted for interface compatibility but NOT supported.
+ *         repls handle tool use internally via the SDK. if plugs.tools is provided,
+ *         a BadRequestError is thrown.
  */
-const invokeQuery = async <TOutput>(input: {
+const invokeQuery = async <
+  TOutput,
+  TPlugs extends BrainPlugs = BrainPlugs,
+>(input: {
   mode: 'ask' | 'act';
   model: string;
   spec: BrainSpec;
   on?: { episode?: BrainEpisode; series?: BrainSeries };
+  plugs?: TPlugs;
   role: { briefs?: Artifact<typeof GitFile>[] };
-  prompt: string;
+  prompt: AsBrainPromptFor<TPlugs>;
   schema: { output: z.Schema<TOutput> };
-}): Promise<BrainOutput<TOutput, 'repl'>> => {
+}): Promise<BrainOutput<TOutput, 'repl', TPlugs>> => {
   // fail-fast: continuation is not supported for repls
   // claude-agent-sdk session resumption doesn't work with structured outputs
   if (input.on?.episode || input.on?.series) {
@@ -207,6 +217,27 @@ const invokeQuery = async <TOutput>(input: {
       { mode: input.mode, model: input.model },
     );
   }
+
+  // fail-fast: plugs.tools is not supported for repls
+  // repls handle tool use internally via the SDK; external tool plugs are not supported
+  if (input.plugs?.tools && input.plugs.tools.length > 0) {
+    throw new BadRequestError(
+      'plugs.tools is not supported with claude-agent-sdk repls. repls handle tool use internally via the SDK. use BrainAtom for external tool integration.',
+      { mode: input.mode, model: input.model },
+    );
+  }
+
+  // fail-fast: tool result continuation is not supported
+  // repls only accept string prompts, not BrainPlugToolExecution arrays
+  if (Array.isArray(input.prompt)) {
+    throw new BadRequestError(
+      'tool result continuation is not supported with claude-agent-sdk repls. repls only accept string prompts. use BrainAtom for tool result continuation.',
+      { mode: input.mode, model: input.model },
+    );
+  }
+
+  // extract prompt as string (guaranteed by above check)
+  const promptText = input.prompt as string;
 
   const startTime = Date.now();
 
@@ -226,7 +257,7 @@ const invokeQuery = async <TOutput>(input: {
 
   // invoke claude-agent-sdk query
   const queryIterator = query({
-    prompt: input.prompt,
+    prompt: promptText,
     options: {
       systemPrompt: systemPrompt || undefined,
       model: input.model,
@@ -259,7 +290,7 @@ const invokeQuery = async <TOutput>(input: {
       cache: { get: cacheGetTokens, set: cacheSetTokens },
     },
     chars: {
-      input: input.prompt.length + (systemPrompt?.length ?? 0),
+      input: promptText.length + (systemPrompt?.length ?? 0),
       output: outputText.length,
       cache: { get: 0, set: 0 },
     },
@@ -293,7 +324,7 @@ const invokeQuery = async <TOutput>(input: {
     },
     with: {
       exchange: {
-        input: input.prompt,
+        input: promptText,
         output: outputText,
         exid: sessionExid,
       },
@@ -302,7 +333,7 @@ const invokeQuery = async <TOutput>(input: {
     },
   });
 
-  return { output, metrics, ...continuables };
+  return { output, calls: null, metrics, ...continuables };
 };
 
 /**
@@ -327,17 +358,21 @@ export const genBrainRepl = (input: {
 
     /**
      * .what = readonly analysis (research, queries, code review)
-     * .why = provides safe, non-mutating agent interactions
+     * .why = provides safe, non-mutate agent interactions
+     *
+     * .note = plugs.tools is accepted for interface compatibility but NOT supported.
+     *         repls handle tool use internally via the SDK.
      */
-    ask: async <TOutput>(
+    ask: async <TOutput, TPlugs extends BrainPlugs = BrainPlugs>(
       askInput: {
         on?: PickOne<{ episode: BrainEpisode; series: BrainSeries }>;
+        plugs?: TPlugs;
         role: { briefs?: Artifact<typeof GitFile>[] };
-        prompt: string;
+        prompt: AsBrainPromptFor<TPlugs>;
         schema: { output: z.Schema<TOutput> };
       },
       _context?: Empty,
-    ): Promise<BrainOutput<TOutput, 'repl'>> =>
+    ): Promise<BrainOutput<TOutput, 'repl', TPlugs>> =>
       invokeQuery({
         mode: 'ask',
         model: config.model,
@@ -352,16 +387,20 @@ export const genBrainRepl = (input: {
     /**
      * .what = read+write actions (code changes, file edits)
      * .why = provides full agentic capabilities with write access
+     *
+     * .note = plugs.tools is accepted for interface compatibility but NOT supported.
+     *         repls handle tool use internally via the SDK.
      */
-    act: async <TOutput>(
+    act: async <TOutput, TPlugs extends BrainPlugs = BrainPlugs>(
       actInput: {
         on?: PickOne<{ episode: BrainEpisode; series: BrainSeries }>;
+        plugs?: TPlugs;
         role: { briefs?: Artifact<typeof GitFile>[] };
-        prompt: string;
+        prompt: AsBrainPromptFor<TPlugs>;
         schema: { output: z.Schema<TOutput> };
       },
       _context?: Empty,
-    ): Promise<BrainOutput<TOutput, 'repl'>> =>
+    ): Promise<BrainOutput<TOutput, 'repl', TPlugs>> =>
       invokeQuery({
         mode: 'act',
         model: config.model,
