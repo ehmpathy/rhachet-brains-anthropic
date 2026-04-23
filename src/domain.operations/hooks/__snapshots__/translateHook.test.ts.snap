@@ -13,7 +13,7 @@ exports[`translateHook given: [case1] translateHookToClaudeCode when: [t7] full 
 }
 `;
 
-exports[`translateHook given: [case2] translateHookFromClaudeCode when: [t10] entry with multiple hooks from different authors then: result matches snapshot 1`] = `
+exports[`translateHook given: [case2] translateHookFromClaudeCode when: [t11] entry with multiple hooks from different authors then: result matches snapshot 1`] = `
 [
   {
     "author": "repo=app/role=mechanic",

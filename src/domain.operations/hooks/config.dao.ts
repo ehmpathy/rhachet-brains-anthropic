@@ -29,6 +29,7 @@ export type ClaudeCodeHookEventName =
   | 'SessionStart'
   | 'PreToolUse'
   | 'PostToolUse'
+  | 'UserPromptSubmit'
   | 'Stop';
 
 /**
