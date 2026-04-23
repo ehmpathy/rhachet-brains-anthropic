@@ -1,4 +1,5 @@
-import type { BrainHook, BrainHookEvent, BrainHooksAdapter } from 'rhachet';
+import { UnexpectedCodePathError } from 'helpful-errors';
+import type { BrainHook, BrainHooksAdapter } from 'rhachet';
 
 import type {
   ClaudeCodeHook,
@@ -14,10 +15,13 @@ import {
 /**
  * .what = maps rhachet event to claude code event name
  * .why = used for deletion lookup
+ *
+ * .note = onTalk maps to UserPromptSubmit (when human submits input)
  */
-const EVENT_MAP: Record<BrainHookEvent, ClaudeCodeHookEventName> = {
+const EVENT_MAP: Record<string, ClaudeCodeHookEventName> = {
   onBoot: 'SessionStart',
   onTool: 'PreToolUse',
+  onTalk: 'UserPromptSubmit',
   onStop: 'Stop',
 };
 
@@ -200,6 +204,11 @@ export const genBrainHooksAdapterForClaudeCode = (input: {
 
         // map event to claude code event name
         const claudeEvent = EVENT_MAP[event];
+        if (!claudeEvent)
+          throw new UnexpectedCodePathError(
+            'unsupported BrainHookEvent for claude code adapter',
+            { event, supported: Object.keys(EVENT_MAP) },
+          );
 
         // find and remove hook from ALL entries (cleans up orphans across matchers)
         const hooksSection = settings.hooks ?? {};

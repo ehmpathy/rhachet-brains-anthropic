@@ -1,3 +1,4 @@
+import { UnexpectedCodePathError } from 'helpful-errors';
 import { toMilliseconds } from 'iso-time';
 import type { BrainHook, BrainHookEvent } from 'rhachet';
 
@@ -10,10 +11,13 @@ import type {
 /**
  * .what = maps rhachet BrainHookEvent to claude code hook event name
  * .why = claude code uses different event names than rhachet
+ *
+ * .note = onTalk maps to UserPromptSubmit (when human submits input)
  */
-const EVENT_MAP: Record<BrainHookEvent, ClaudeCodeHookEventName> = {
+const EVENT_MAP: Record<string, ClaudeCodeHookEventName> = {
   onBoot: 'SessionStart',
   onTool: 'PreToolUse',
+  onTalk: 'UserPromptSubmit',
   onStop: 'Stop',
 };
 
@@ -21,9 +25,10 @@ const EVENT_MAP: Record<BrainHookEvent, ClaudeCodeHookEventName> = {
  * .what = reverse map from claude code event to rhachet event
  * .why = enables lookup when read from claude code settings
  */
-const REVERSE_EVENT_MAP: Record<string, BrainHookEvent> = {
+const REVERSE_EVENT_MAP: Record<string, string> = {
   SessionStart: 'onBoot',
   PreToolUse: 'onTool',
+  UserPromptSubmit: 'onTalk',
   Stop: 'onStop',
 };
 
@@ -40,6 +45,14 @@ export const translateHookToClaudeCode = (input: {
 } => {
   const { hook } = input;
 
+  // fail-fast if event is not supported
+  const event = EVENT_MAP[hook.event];
+  if (!event)
+    throw new UnexpectedCodePathError(
+      'unsupported BrainHookEvent for claude code adapter',
+      { event: hook.event, supported: Object.keys(EVENT_MAP) },
+    );
+
   // determine the matcher based on filter
   const matcher = hook.filter?.what ?? '*';
 
@@ -55,7 +68,7 @@ export const translateHookToClaudeCode = (input: {
   };
 
   return {
-    event: EVENT_MAP[hook.event],
+    event,
     matcher,
     hook: claudeHook,
   };
@@ -81,7 +94,7 @@ export const translateHookFromClaudeCode = (input: {
   // each hook in the entry becomes a separate BrainHook
   return entry.hooks.map((h) => ({
     author: h.author ?? 'unknown',
-    event: rhachetEvent,
+    event: rhachetEvent as BrainHookEvent,
     command: h.command,
     timeout: h.timeout ? { seconds: h.timeout } : { seconds: 30 },
     ...(entry.matcher !== '*' && {

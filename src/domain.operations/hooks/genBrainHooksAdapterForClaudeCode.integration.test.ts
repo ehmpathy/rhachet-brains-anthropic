@@ -1,8 +1,9 @@
 import * as fs from 'fs/promises';
+import { UnexpectedCodePathError } from 'helpful-errors';
 import * as os from 'os';
 import * as path from 'path';
 import type { BrainHook } from 'rhachet';
-import { given, then, when } from 'test-fns';
+import { getError, given, then, when } from 'test-fns';
 
 import { genBrainHooksAdapterForClaudeCode } from './genBrainHooksAdapterForClaudeCode';
 
@@ -645,6 +646,123 @@ describe('genBrainHooksAdapterForClaudeCode.integration', () => {
         const hooks = await adapter.dao.get.all();
         expect(hooks).toHaveLength(1);
         expect(hooks[0]?.author).toEqual('repo=test/role=beta');
+      });
+    });
+  });
+
+  given('[case10] onTalk event', () => {
+    let repoPath: string;
+
+    beforeEach(async () => {
+      repoPath = path.join(
+        os.tmpdir(),
+        `claude-adapter-test-${Date.now()}-case10`,
+      );
+      await fs.mkdir(repoPath, { recursive: true });
+    });
+
+    when('[t0] dao.set.upsert with onTalk', () => {
+      then('creates hook with UserPromptSubmit event', async () => {
+        const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+        const hook = {
+          author: 'repo=test/role=mechanic',
+          event: 'onTalk' as BrainHook['event'],
+          command: 'echo talk',
+          timeout: { seconds: 30 },
+        };
+        await adapter.dao.set.upsert({ hook });
+
+        const content = await fs.readFile(
+          path.join(repoPath, '.claude', 'settings.json'),
+          'utf-8',
+        );
+        const parsed = JSON.parse(content);
+        expect(parsed.hooks.UserPromptSubmit).toBeDefined();
+        expect(parsed.hooks.UserPromptSubmit[0].hooks[0].command).toEqual(
+          'echo talk',
+        );
+      });
+    });
+
+    when('[t1] dao.get.all after onTalk upsert', () => {
+      then('returns hook with event=onTalk', async () => {
+        const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+        const hook = {
+          author: 'repo=test/role=mechanic',
+          event: 'onTalk' as BrainHook['event'],
+          command: 'echo talk',
+          timeout: { seconds: 30 },
+        };
+        await adapter.dao.set.upsert({ hook });
+
+        const hooks = await adapter.dao.get.all();
+        expect(hooks).toHaveLength(1);
+        expect(hooks[0]?.event).toEqual('onTalk');
+      });
+    });
+  });
+
+  given('[case11] unsupported events', () => {
+    let repoPath: string;
+
+    beforeEach(async () => {
+      repoPath = path.join(
+        os.tmpdir(),
+        `claude-adapter-test-${Date.now()}-case11`,
+      );
+      await fs.mkdir(repoPath, { recursive: true });
+    });
+
+    when('[t0] dao.set.upsert with unsupported event', () => {
+      then('throws UnexpectedCodePathError', async () => {
+        const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+        const hook = {
+          author: 'repo=test/role=mechanic',
+          event: 'onFoo' as BrainHook['event'],
+          command: 'echo foo',
+          timeout: { seconds: 30 },
+        };
+        const error = await getError(async () =>
+          adapter.dao.set.upsert({ hook }),
+        );
+        expect(error).toBeInstanceOf(UnexpectedCodePathError);
+        expect(error.message).toContain('unsupported BrainHookEvent');
+      });
+    });
+
+    when('[t1] dao.set.findsert with unsupported event', () => {
+      then('throws UnexpectedCodePathError', async () => {
+        const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+        const hook = {
+          author: 'repo=test/role=mechanic',
+          event: 'onFoo' as BrainHook['event'],
+          command: 'echo foo',
+          timeout: { seconds: 30 },
+        };
+        const error = await getError(async () =>
+          adapter.dao.set.findsert({ hook }),
+        );
+        expect(error).toBeInstanceOf(UnexpectedCodePathError);
+        expect(error.message).toContain('unsupported BrainHookEvent');
+      });
+    });
+
+    when('[t2] dao.del with unsupported event', () => {
+      then('throws UnexpectedCodePathError', async () => {
+        const adapter = genBrainHooksAdapterForClaudeCode({ repoPath });
+        const error = await getError(async () =>
+          adapter.dao.del({
+            by: {
+              unique: {
+                author: 'repo=test/role=mechanic',
+                event: 'onFoo' as BrainHook['event'],
+                command: 'echo foo',
+              },
+            },
+          }),
+        );
+        expect(error).toBeInstanceOf(UnexpectedCodePathError);
+        expect(error.message).toContain('unsupported BrainHookEvent');
       });
     });
   });

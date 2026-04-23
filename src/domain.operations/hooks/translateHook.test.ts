@@ -1,5 +1,6 @@
+import { UnexpectedCodePathError } from 'helpful-errors';
 import type { BrainHook } from 'rhachet';
-import { given, then, when } from 'test-fns';
+import { getError, given, then, when } from 'test-fns';
 
 import {
   translateHookFromClaudeCode,
@@ -124,6 +125,35 @@ describe('translateHook', () => {
         expect(result).toMatchSnapshot();
       });
     });
+
+    when('[t8] onTalk event', () => {
+      then('maps to UserPromptSubmit', () => {
+        const hook = {
+          author: 'repo=test/role=mechanic',
+          event: 'onTalk' as BrainHook['event'],
+          command: 'echo talk',
+          timeout: { seconds: 30 },
+        };
+        const result = translateHookToClaudeCode({ hook });
+        expect(result.event).toEqual('UserPromptSubmit');
+      });
+    });
+
+    when('[t9] unsupported event', () => {
+      then('throws UnexpectedCodePathError', async () => {
+        const hook = {
+          author: 'repo=test/role=mechanic',
+          event: 'onFoo' as BrainHook['event'],
+          command: 'echo foo',
+          timeout: { seconds: 30 },
+        };
+        const error = await getError(async () =>
+          translateHookToClaudeCode({ hook }),
+        );
+        expect(error).toBeInstanceOf(UnexpectedCodePathError);
+        expect(error.message).toContain('unsupported BrainHookEvent');
+      });
+    });
   });
 
   given('[case2] translateHookFromClaudeCode', () => {
@@ -167,7 +197,27 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t2] Stop event', () => {
+    when('[t2] UserPromptSubmit event', () => {
+      then('maps to onTalk', () => {
+        const result = translateHookFromClaudeCode({
+          event: 'UserPromptSubmit',
+          entry: {
+            matcher: '*',
+            hooks: [
+              {
+                type: 'command',
+                command: 'echo talk',
+                author: 'repo=test/role=mechanic',
+              },
+            ],
+          },
+        });
+        expect(result).toHaveLength(1);
+        expect(result[0]?.event).toEqual('onTalk');
+      });
+    });
+
+    when('[t3] Stop event', () => {
       then('maps to onStop', () => {
         const result = translateHookFromClaudeCode({
           event: 'Stop',
@@ -187,7 +237,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t3] timeout in seconds', () => {
+    when('[t4] timeout in seconds', () => {
       then('converts to IsoDuration', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
@@ -207,7 +257,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t4] no timeout specified', () => {
+    when('[t5] no timeout specified', () => {
       then('defaults to { seconds: 30 }', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
@@ -226,7 +276,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t5] matcher with specific tool', () => {
+    when('[t6] matcher with specific tool', () => {
       then('sets filter.what', () => {
         const result = translateHookFromClaudeCode({
           event: 'PreToolUse',
@@ -245,7 +295,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t6] matcher is *', () => {
+    when('[t7] matcher is *', () => {
       then('no filter is set', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
@@ -264,7 +314,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t7] hook.author is present', () => {
+    when('[t8] hook.author is present', () => {
       then('sets hook.author from each hook', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
@@ -283,7 +333,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t8] no author on hook', () => {
+    when('[t9] no author on hook', () => {
       then('defaults to "unknown"', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
@@ -296,7 +346,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t9] unknown event', () => {
+    when('[t10] unknown event', () => {
       then('returns empty array', () => {
         const result = translateHookFromClaudeCode({
           event: 'UnknownEvent',
@@ -309,7 +359,7 @@ describe('translateHook', () => {
       });
     });
 
-    when('[t10] entry with multiple hooks from different authors', () => {
+    when('[t11] entry with multiple hooks from different authors', () => {
       then('returns multiple BrainHook objects with correct authors', () => {
         const result = translateHookFromClaudeCode({
           event: 'SessionStart',
