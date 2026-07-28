@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`commonjsLoadability.acceptance given: [case1] the built package under a real commonjs require() when: [t1] the registry factories are called after require() then: the registered brain slugs match the contract snapshot 1`] = `
+{
+  "atomSlugs": [
+    "claude/haiku",
+    "claude/opus",
+    "claude/sonnet",
+  ],
+  "replSlugs": [
+    "claude/code",
+    "claude/code/haiku",
+    "claude/code/opus",
+    "claude/code/sonnet",
+  ],
+}
+`;

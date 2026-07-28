@@ -17,7 +17,9 @@ if (!process.env.ANTHROPIC_API_KEY)
   );
 
 describe('genBrainRepl.integration', () => {
-  jest.setTimeout(60000);
+  // act mode runs a full agentic read+write session, which regularly exceeds 60s;
+  // give it headroom so the ask/act coverage is not cut off by a too-tight timeout
+  jest.setTimeout(120000);
 
   // use haiku for fast integration tests
   const brainRepl = genBrainRepl({ slug: 'claude/code/haiku' });
