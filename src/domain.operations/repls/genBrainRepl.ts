@@ -1,4 +1,4 @@
-import { query } from '@anthropic-ai/claude-agent-sdk';
+import type { Query } from '@anthropic-ai/claude-agent-sdk';
 import { createHash } from 'crypto';
 import { BadRequestError } from 'helpful-errors';
 import { hostname } from 'os';
@@ -20,11 +20,33 @@ import type { GitFile } from 'rhachet-artifact-git';
 import type { Empty, PickOne } from 'type-fns';
 import type { z } from 'zod';
 
+import { importEsmSafe } from '../../infra/esm/importEsmSafe';
 import { asJsonSchema } from '../../infra/schema/asJsonSchema';
 import {
   type AnthropicBrainReplSlug,
   CONFIG_BY_REPL_SLUG,
 } from './BrainRepl.config';
+
+type ClaudeAgentSdk = typeof import('@anthropic-ai/claude-agent-sdk');
+
+/**
+ * .what = the esm-only sdk package specifier for the native import path
+ * .why = importEsmSafe locates the package by this specifier (via require.resolve)
+ *        on the native branch
+ */
+const SDK_SPECIFIER = '@anthropic-ai/claude-agent-sdk';
+
+/**
+ * .what = lazily loads the claude-agent-sdk at point of use
+ * .why = an eager top-level import of the esm-only sdk throws when this commonjs
+ *        package is require()d, which drops the brain from the registry. the
+ *        generic importEsmSafe communicator (infra/esm) keeps the package
+ *        commonjs-loadable and defers the esm evaluation to the first ask/act.
+ *        importEsmSafe owns the jest-vs-native branch internally, so the caller
+ *        just names the specifier.
+ */
+const getOneClaudeAgentSdk = (): Promise<ClaudeAgentSdk> =>
+  importEsmSafe<ClaudeAgentSdk>({ specifier: SDK_SPECIFIER });
 
 /**
  * .what = prefix for episode exids from this repo
@@ -108,7 +130,7 @@ interface QueryResult {
  *          (parallel tool uses share same id and report identical usage)
  */
 const extractResultFromQuery = async (
-  queryIterator: ReturnType<typeof query>,
+  queryIterator: Query,
 ): Promise<QueryResult> => {
   let result: string | undefined;
   let structuredOutput: unknown | undefined;
@@ -255,7 +277,8 @@ const invokeQuery = async <
       ? { disallowedTools: [...TOOLS_DISALLOWED_FOR_ASK] }
       : { allowedTools: [...TOOLS_ALLOWED_FOR_ACT] };
 
-  // invoke claude-agent-sdk query
+  // lazily load the esm-only sdk at point of use, then invoke its query
+  const { query } = await getOneClaudeAgentSdk();
   const queryIterator = query({
     prompt: promptText,
     options: {
