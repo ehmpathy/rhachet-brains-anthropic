@@ -1,21 +1,7 @@
 name: test
 
-# ⚠️ no `workflow_call:` here, and its absence is load-bearing.
-#
-# this workflow reads `secrets.ANTHROPIC_API_KEY` directly (below). inside a
-# workflow that declares `workflow_call:`, a bare `secrets.*` reference is
-# invalid — a reusable workflow may only read secrets its own
-# `workflow_call.secrets` block declares, or ones passed via `secrets: inherit`.
-# so the trigger and the secret reference could not both stand.
-#
-# the trigger was the dead half: no caller reaches `test.yml`. `publish.yml`
-# calls `./.github/workflows/.test.yml` directly, bypassing this file entirely.
-#
-# left in place it cost a 0s `startup_failure` on every push — no job, no
-# annotation, and no PR check either, since this workflow triggers on `push`
-# rather than `pull_request`. so the suite silently never ran while
-# `rhx git.release` reported all checks passed.
 on:
+  workflow_call:
   push:
     branches-ignore:
       - main # exclude main branch, since deploy workflow triggers on main, and calls the test workflow inside of it already
@@ -25,6 +11,24 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }} # per [workflow] x [branch, tag]
   cancel-in-progress: true #  cancel workflows for non-latest commits
+
+# ⚠️ this block is load-bearing, and its absence is silent.
+#
+# `.test.yml` declares `permissions: id-token: write` for its aws oidc step. a
+# caller may only grant permissions it holds itself, so a caller that omits this
+# block hands down the default — and once the default tightened to read-only,
+# the call became unsatisfiable.
+#
+# github rejects that at PARSE time: a 0s `startup_failure` with no job, no
+# annotation, and no error text reachable through the api. and because this
+# workflow triggers on `push` rather than `pull_request`, the failed run is not
+# a PR check either — so `rhx git.release` reported "all checks passed" while
+# the suite never ran once between 2026-07-28 and this commit.
+#
+# the sibling repos on this template carry the block; this repo had lost it.
+permissions:
+  id-token: write # required for oidc
+  contents: read
 
 jobs:
   suite:
