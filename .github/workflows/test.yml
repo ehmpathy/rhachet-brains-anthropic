@@ -1,7 +1,21 @@
 name: test
 
+# ⚠️ no `workflow_call:` here, and its absence is load-bearing.
+#
+# this workflow reads `secrets.ANTHROPIC_API_KEY` directly (below). inside a
+# workflow that declares `workflow_call:`, a bare `secrets.*` reference is
+# invalid — a reusable workflow may only read secrets its own
+# `workflow_call.secrets` block declares, or ones passed via `secrets: inherit`.
+# so the trigger and the secret reference could not both stand.
+#
+# the trigger was the dead half: no caller reaches `test.yml`. `publish.yml`
+# calls `./.github/workflows/.test.yml` directly, bypassing this file entirely.
+#
+# left in place it cost a 0s `startup_failure` on every push — no job, no
+# annotation, and no PR check either, since this workflow triggers on `push`
+# rather than `pull_request`. so the suite silently never ran while
+# `rhx git.release` reported all checks passed.
 on:
-  workflow_call:
   push:
     branches-ignore:
       - main # exclude main branch, since deploy workflow triggers on main, and calls the test workflow inside of it already
