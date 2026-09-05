@@ -24,8 +24,16 @@ concurrency:
 #
 # ⚠️ and a run that fails at parse time emits NO check runs at all — so the
 # whole suite vanished from the PR gate, and `rhx git.release` reported "all
-# checks passed" while the suite never ran once between 2026-07-28 and this
-# commit. a broken workflow and an absent workflow read identically there.
+# checks passed" while the suite never ran. a broken workflow and an absent
+# workflow read identically there.
+#
+# .the timeline, stated precisely, because it is easy to overstate = this
+# workflow last ran GREEN on 2026-07-28 (the v0.4.3 release). no push touched it
+# for the next six weeks. the first push after that window — 2026-09-05 — hit
+# `startup_failure`. so it did not fail repeatedly and unnoticed; the default
+# permission tightened during a quiet window, and the break surfaced on the very
+# next run. the hazard is that a rarely-fired workflow can be broken by an
+# environment change it never saw coming.
 #
 # ⚠️ the trigger is NOT the cause, though it looks like one. this workflow fires
 # on `push`, not `pull_request`, and an earlier revision of this comment blamed
