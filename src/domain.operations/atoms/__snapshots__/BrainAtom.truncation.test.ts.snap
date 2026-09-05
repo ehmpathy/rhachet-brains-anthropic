@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`genBrainAtom max_tokens truncation given: [case1] a response cut off at the max_tokens cap when: [t0] ask is called then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: the response hit the max_tokens cap, so its output was cut off mid-json
+
+{
+  "slug": "claude/sonnet",
+  "model": "claude-sonnet-5",
+  "maxTokens": 128000,
+  "hint": "ask for a shorter output, or split the ask into steps. note that on 4.6+ rungs the model thinks by default, and those tokens share this budget — so a rung that thinks reaches this cap sooner than one that does not."
+}"
+`;

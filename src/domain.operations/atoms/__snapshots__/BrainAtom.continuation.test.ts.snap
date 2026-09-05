@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`genBrainAtom haiku continuation refusal given: [case1] a haiku atom asked to continue a prior episode when: [t0] ask is called then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: episode continuation is not supported with haiku models — haiku does not honor prior turns. use sonnet, opus, or fable instead.
+
+{
+  "slug": "claude/haiku",
+  "model": "claude-haiku-4-5-20251001"
+}"
+`;

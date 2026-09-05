@@ -1,4 +1,3 @@
-import type { Query } from '@anthropic-ai/claude-agent-sdk';
 import { createHash } from 'crypto';
 import { BadRequestError } from 'helpful-errors';
 import { hostname } from 'os';
@@ -22,10 +21,16 @@ import type { z } from 'zod';
 
 import { importEsmSafe } from '../../infra/esm/importEsmSafe';
 import { asJsonSchema } from '../../infra/schema/asJsonSchema';
+import { asBrainDescription } from '../brains/asBrainDescription';
+import { asReplSlugFromAtomSlug } from '../brains/asReplSlugFromAtomSlug';
 import {
+  ANTHROPIC_BRAIN_REPL_SLUGS,
   type AnthropicBrainReplSlug,
   CONFIG_BY_REPL_SLUG,
-} from './BrainRepl.config';
+} from '../brains/BrainRepl.config';
+import { HINT_CREDENTIAL_ABSENT } from '../brains/HINT_CREDENTIAL_ABSENT';
+import { asQueryOptions } from './asQueryOptions';
+import { extractResultFromQuery } from './extractResultFromQuery';
 
 type ClaudeAgentSdk = typeof import('@anthropic-ai/claude-agent-sdk');
 
@@ -75,134 +80,6 @@ const buildSessionExid = (input: { sessionId: string }): string =>
 
 // re-export for consumers
 export { CONFIG_BY_REPL_SLUG, type AnthropicBrainReplSlug };
-
-/**
- * .what = tools disallowed for readonly ask operations
- * .why = prevents mutations during research/analysis tasks
- */
-const TOOLS_DISALLOWED_FOR_ASK = [
-  'Edit',
-  'Write',
-  'Bash',
-  'NotebookEdit',
-] as const;
-
-/**
- * .what = tools allowed for read+write act operations
- * .why = enables full agentic capabilities for code changes
- */
-const TOOLS_ALLOWED_FOR_ACT = [
-  'Read',
-  'Edit',
-  'Write',
-  'Bash',
-  'Glob',
-  'Grep',
-  'Task',
-] as const;
-
-/**
- * .what = result extracted from claude-agent-sdk query
- * .why = captures output data, usage metrics, and session info from the stream
- */
-interface QueryResult {
-  output: unknown;
-  sessionId: string | null;
-  usage: {
-    inputTokens: number;
-    outputTokens: number;
-    cacheGetTokens: number;
-    cacheSetTokens: number;
-  };
-}
-
-/**
- * .what = extracts final result from claude-agent-sdk query async generator
- * .why = query() returns an async iterator, need to consume to get result
- *
- * .note = when outputFormat is used, result may be in structured_output field
- *
- * .ref = usage extraction pattern per claude-agent-sdk cost tracking docs
- *        https://platform.claude.com/docs/en/agent-sdk/cost-tracking
- *        - result message contains authoritative cumulative usage
- *        - modelUsage provides per-model breakdown suitable for billing
- *        - assistant message accumulation would require deduplication by message.id
- *          (parallel tool uses share same id and report identical usage)
- */
-const extractResultFromQuery = async (
-  queryIterator: Query,
-): Promise<QueryResult> => {
-  let result: string | undefined;
-  let structuredOutput: unknown | undefined;
-  let sessionId: string | null = null;
-  let totalInputTokens = 0;
-  let totalOutputTokens = 0;
-  let totalCacheGetTokens = 0;
-  let totalCacheSetTokens = 0;
-
-  for await (const message of queryIterator) {
-    // capture sessionId from any message (they all carry it)
-    if ('session_id' in message && message.session_id) {
-      sessionId = message.session_id as string;
-    }
-
-    // check for result message with success subtype
-    if (message.type === 'result' && message.subtype === 'success') {
-      result = message.result;
-      structuredOutput = message.structured_output;
-
-      // extract usage from result message (authoritative cumulative usage)
-      // ref: https://platform.claude.com/docs/en/agent-sdk/cost-tracking
-      const modelUsage = message.modelUsage as
-        | Record<
-            string,
-            {
-              inputTokens?: number;
-              outputTokens?: number;
-              cacheReadInputTokens?: number;
-              cacheCreationInputTokens?: number;
-            }
-          >
-        | undefined;
-      if (modelUsage) {
-        for (const usage of Object.values(modelUsage)) {
-          totalInputTokens += usage.inputTokens ?? 0;
-          totalOutputTokens += usage.outputTokens ?? 0;
-          totalCacheGetTokens += usage.cacheReadInputTokens ?? 0;
-          totalCacheSetTokens += usage.cacheCreationInputTokens ?? 0;
-        }
-      }
-    }
-
-    // throw on error subtypes
-    if (message.type === 'result' && message.subtype !== 'success') {
-      throw new Error(
-        `claude-agent-sdk query failed: ${message.subtype}, errors: ${message.errors?.join(', ') ?? 'unknown'}`,
-      );
-    }
-  }
-
-  // prefer structured_output when available (used with outputFormat)
-  const output =
-    structuredOutput !== undefined
-      ? structuredOutput
-      : result !== undefined
-        ? JSON.parse(result)
-        : (() => {
-            throw new Error('no result message received from claude-agent-sdk');
-          })();
-
-  return {
-    output,
-    sessionId,
-    usage: {
-      inputTokens: totalInputTokens,
-      outputTokens: totalOutputTokens,
-      cacheGetTokens: totalCacheGetTokens,
-      cacheSetTokens: totalCacheSetTokens,
-    },
-  };
-};
 
 /**
  * .what = invokes claude-agent-sdk query with specified mode
@@ -258,6 +135,35 @@ const invokeQuery = async <
     );
   }
 
+  // fail-fast: no credential means the sdk decides what to do, and it may not fail
+  //
+  // .why = the atom path guards this, and the repl path did not — so the readme's
+  //   credential promise held for half the package. and the two halves fail
+  //   DIFFERENTLY: an atom raises an sdk error, while the repl HANGS.
+  //
+  // ⚠️ the hang is measured, not feared. with this guard disabled the clamp in
+  //   `BrainRepl.credential.test.ts` does not fail on a bad message — it dies on
+  //   `Exceeded timeout of 5000 ms`, and the file takes 21s rather than 2s. so with
+  //   no credential the agent-sdk neither returns nor throws; it stalls, most likely
+  //   at an interactive auth prompt that no gate is there to answer.
+  //
+  //   a hang is the one failure a gate cannot survive: it neither passes nor fails,
+  //   it just stops — the wish's `.why` is a pre-commit gate whose miss is permanent
+  //   (`rule.forbid.failhide`).
+  //
+  // ⚠️ a repl takes no `context.anthropic`. the sdk owns its own client, so there is
+  //   no injection point to fall back on — the env var is the only route, which is
+  //   exactly why its absence must be caught here rather than deferred to the sdk.
+  if (!process.env.ANTHROPIC_API_KEY)
+    throw new BadRequestError(
+      'no anthropic credential found — set ANTHROPIC_API_KEY before a repl call',
+      {
+        mode: input.mode,
+        model: input.model,
+        hint: HINT_CREDENTIAL_ABSENT,
+      },
+    );
+
   // extract prompt as string (guaranteed by above check)
   const promptText = input.prompt as string;
 
@@ -271,29 +177,24 @@ const invokeQuery = async <
   // convert zod schema to json schema for native structured output
   const jsonSchema = asJsonSchema({ schema: input.schema.output });
 
-  // build tool constraints based on mode
-  const toolConstraints =
-    input.mode === 'ask'
-      ? { disallowedTools: [...TOOLS_DISALLOWED_FOR_ASK] }
-      : { allowedTools: [...TOOLS_ALLOWED_FOR_ACT] };
-
   // lazily load the esm-only sdk at point of use, then invoke its query
   const { query } = await getOneClaudeAgentSdk();
   const queryIterator = query({
     prompt: promptText,
-    options: {
-      systemPrompt: systemPrompt || undefined,
+    options: asQueryOptions({
+      systemPrompt,
       model: input.model,
-      ...toolConstraints,
-      outputFormat: {
-        type: 'json_schema',
-        schema: jsonSchema as Record<string, unknown>,
-      },
-    },
+      mode: input.mode,
+      jsonSchema: jsonSchema as Record<string, unknown>,
+    }),
   });
 
   // extract final result from async iterator
-  const queryResult = await extractResultFromQuery(queryIterator);
+  const queryResult = await extractResultFromQuery({
+    queryIterator,
+    model: input.model,
+    mode: input.mode,
+  });
 
   // parse output via schema for runtime validation
   const output = input.schema.output.parse(queryResult.output);
@@ -373,10 +274,56 @@ export const genBrainRepl = (input: {
 }): BrainRepl => {
   const config = CONFIG_BY_REPL_SLUG[input.slug];
 
+  // fail-fast: a slug that names no registered rung
+  //
+  // ⚠️ the TWIN of the atom guard, and it is here for the reason that guard's own
+  //   history teaches: a defect class repaired on only one of two twin objects is that
+  //   defect class still shipped. the atom and repl factories have the same shape, so
+  //   they have the same defect — an unregistered slug dies on the next line as a bare
+  //   `TypeError: Cannot read properties of undefined`.
+  //
+  // .note = the repl ladder mirrors the atom ladder rung for rung, so its gaps are the
+  //   same gaps, and the bare `claude/code` adds one more shape to mistype. the hint is
+  //   derived from the repl registry, so it names repl slugs — a repl caller cannot
+  //   pass an atom slug, and a list of the wrong namespace would be worse than none.
+  if (!config)
+    throw new BadRequestError(
+      `no anthropic brain repl is registered under the slug "${input.slug}"`,
+      {
+        slug: input.slug,
+        hint: `the tier/rung ladder is RAGGED — a rung that exists for one tier may not exist for another, so do not infer a slug from a neighbor tier. registered: ${ANTHROPIC_BRAIN_REPL_SLUGS.join(', ')}`,
+      },
+    );
+
   return new BrainRepl({
     repo: 'anthropic',
     slug: input.slug,
-    description: `claude code (${input.slug}) - agentic coding assistant with tool use`,
+    // .note = the repl carried NO deprecation signal at all, since it builds its own
+    //   description rather than reuse the atom's. the pointer is remapped into the
+    //   repl namespace, because a repl caller cannot pass an atom slug.
+    // ⚠️ the base names the MODEL, not the slug. it read
+    //   `claude code (${slug}) - …`, which echoed back the map key a caller already
+    //   holds and stated no other fact — so all 18 repl rows read identically, and the
+    //   one field rhachet documents as "helps developers understand what this atom is
+    //   best suited for" carried no sense at all. found by a read of the
+    //   `getBrainReplsByAnthropic()` snapshot, which is why that snapshot now exists.
+    //   the atom twin never echoed its slug, so this also makes the two symmetric.
+    // ⚠️ it matters MOST here: the repl ladder spans a 10x rate spread
+    //   (haiku 4.5 at $1/$5 against fable 5 at $10/$50), and the slug alone does not
+    //   say which model a rung reaches — `claude/code` runs sonnet, not opus.
+    // .note = "code assistant", not the prior gerund form, per `rule.forbid.gerunds`;
+    //   fixed forward on contact since this line was already under edit.
+    description: asBrainDescription({
+      base: `claude code on ${config.model} - agentic code assistant with tool use`,
+      deprecated: config.deprecated
+        ? {
+            ...config.deprecated,
+            replacedBy: asReplSlugFromAtomSlug({
+              slug: config.deprecated.replacedBy,
+            }),
+          }
+        : null,
+    }),
     spec: config.spec,
 
     /**

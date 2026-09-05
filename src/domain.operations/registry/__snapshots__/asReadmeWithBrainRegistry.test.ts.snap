@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`asReadmeWithBrainRegistry given: [case2] a readme with no markers at all when: [t0] the registry section is swapped in then: the full message reads as a contributor would see it 1`] = `
+"BadRequestError: readme lacks the generated brain-registry markers
+
+{
+  "head": "<!-- generated:brains:head -->",
+  "foot": "<!-- generated:brains:foot -->",
+  "hint": "add both markers to readme.md, then run \`npm run fix:readme\`"
+}"
+`;
+
+exports[`asReadmeWithBrainRegistry given: [case3] a readme where the head marker appears twice when: [t0] the registry section is swapped in then: the full message reads as a contributor would see it 1`] = `
+"BadRequestError: a readme brain-registry marker appears more than once
+
+{
+  "doubled": [
+    "<!-- generated:brains:head -->"
+  ],
+  "hint": "remove the extra <!-- generated:brains:head --> from readme.md — each marker must appear exactly once"
+}"
+`;
+
+exports[`asReadmeWithBrainRegistry given: [case4] a readme where the foot marker appears twice when: [t0] the registry section is swapped in then: the full message reads as a contributor would see it 1`] = `
+"BadRequestError: a readme brain-registry marker appears more than once
+
+{
+  "doubled": [
+    "<!-- generated:brains:foot -->"
+  ],
+  "hint": "remove the extra <!-- generated:brains:foot --> from readme.md — each marker must appear exactly once"
+}"
+`;
+
+exports[`asReadmeWithBrainRegistry given: [case5] a readme where the markers are transposed when: [t0] the registry section is swapped in then: the full message reads as a contributor would see it 1`] = `
+"BadRequestError: the readme brain-registry markers are transposed
+
+{
+  "hint": "<!-- generated:brains:head --> must come before <!-- generated:brains:foot -->"
+}"
+`;

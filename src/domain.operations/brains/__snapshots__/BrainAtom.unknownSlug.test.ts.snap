@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`unknown slug fail-fast given: [case1] an atom slug in a gap of the ragged ladder when: [t0] genBrainAtom is called then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: no anthropic brain atom is registered under the slug "claude/sonnet/v4.7"
+
+{
+  "slug": "claude/sonnet/v4.7",
+  "hint": "the tier/rung ladder is RAGGED — a rung that exists for one tier may not exist for another, so do not infer a slug from a neighbor tier. registered: claude/haiku, claude/haiku/v3.5, claude/haiku/v4.5, claude/sonnet, claude/sonnet/v4, claude/sonnet/v4.5, claude/sonnet/v4.6, claude/sonnet/v5, claude/opus, claude/opus/v4, claude/opus/v4.5, claude/opus/v4.6, claude/opus/v4.7, claude/opus/v4.8, claude/opus/v5, claude/fable, claude/fable/v5"
+}"
+`;
+
+exports[`unknown slug fail-fast given: [case2] the repl twin of the same mistake when: [t0] genBrainRepl is called then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: no anthropic brain repl is registered under the slug "claude/code/sonnet/v4.7"
+
+{
+  "slug": "claude/code/sonnet/v4.7",
+  "hint": "the tier/rung ladder is RAGGED — a rung that exists for one tier may not exist for another, so do not infer a slug from a neighbor tier. registered: claude/code, claude/code/haiku, claude/code/haiku/v3.5, claude/code/haiku/v4.5, claude/code/sonnet, claude/code/sonnet/v4, claude/code/sonnet/v4.5, claude/code/sonnet/v4.6, claude/code/sonnet/v5, claude/code/opus, claude/code/opus/v4, claude/code/opus/v4.5, claude/code/opus/v4.6, claude/code/opus/v4.7, claude/code/opus/v4.8, claude/code/opus/v5, claude/code/fable, claude/code/fable/v5"
+}"
+`;

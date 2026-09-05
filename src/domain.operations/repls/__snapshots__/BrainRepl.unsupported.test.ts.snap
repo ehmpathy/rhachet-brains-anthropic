@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`genBrainRepl unsupported-capability refusals given: [case1] a repl asked to continue a prior episode when: [t0] ask is called with on.episode then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: episode/series continuation is not supported with claude-agent-sdk repls. session resumption does not work with structured outputs. use BrainAtom for continuation workflows.
+
+{
+  "mode": "ask",
+  "model": "claude-sonnet-5"
+}"
+`;
+
+exports[`genBrainRepl unsupported-capability refusals given: [case2] a repl handed external tool plugs when: [t0] ask is called with plugs.tools then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: plugs.tools is not supported with claude-agent-sdk repls. repls handle tool use internally via the SDK. use BrainAtom for external tool integration.
+
+{
+  "mode": "ask",
+  "model": "claude-sonnet-5"
+}"
+`;
+
+exports[`genBrainRepl unsupported-capability refusals given: [case3] a repl handed tool results as its prompt when: [t0] ask is called with an array prompt then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: tool result continuation is not supported with claude-agent-sdk repls. repls only accept string prompts. use BrainAtom for tool result continuation.
+
+{
+  "mode": "ask",
+  "model": "claude-sonnet-5"
+}"
+`;

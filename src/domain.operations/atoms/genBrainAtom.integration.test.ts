@@ -169,6 +169,50 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
+  /**
+   * .what = clamps that fable honors continuation, rather than merely permits it
+   * .why = the guard reads the TIER off the slug (`asAtomSlugParts`), and fable's tier
+   *   is not haiku — so it passes through and a continuation call goes live. haiku is
+   *   the cautionary case
+   *   for exactly this: with the guard disabled it SUCCEEDS and quietly ignores the
+   *   prior turns, so an absent check reads as success for as long as no one asks.
+   *   fable is the one tier the sonnet/opus/haiku cases never covered.
+   */
+  given('[case5] episode continuation with fable', () => {
+    const brainAtomFable = genBrainAtom({ slug: 'claude/fable' });
+
+    when('[t0] ask is called with continuation via on.episode', () => {
+      const resultFirst = useThen('first ask succeeds', async () =>
+        brainAtomFable.ask({
+          role: {},
+          prompt:
+            'remember this secret code: LYCHEE31. respond with "code stored"',
+          schema: { output: outputSchema },
+        }),
+      );
+
+      const resultSecond = useThen('second ask succeeds', async () =>
+        brainAtomFable.ask({
+          on: { episode: resultFirst.episode },
+          role: {},
+          prompt: 'what was the secret code i told you to remember?',
+          schema: { output: outputSchema },
+        }),
+      );
+
+      // .note = the load-bearing assertion. a call that merely RETURNS proves
+      //   little — haiku returns too. only the recall of the prior turn separates
+      //   honored continuation from silently dropped context.
+      then('continuation remembers context from the prior exchange', () => {
+        expect(resultSecond.output.content).toContain('LYCHEE31');
+      });
+
+      then('episode accumulates exchanges', () => {
+        expect(resultSecond.episode.exchanges).toHaveLength(2);
+      });
+    });
+  });
+
   // =========================================================================
   // tool use tests
   // =========================================================================
@@ -206,7 +250,7 @@ describe('genBrainAtom.integration', () => {
     },
   });
 
-  given('[case5] ask with tools - tool invocation', () => {
+  given('[case6] ask with tools - tool invocation', () => {
     when('[t0] brain needs to use a tool to answer', () => {
       const result = useThen('ask succeeds', async () =>
         brainAtomSonnet.ask({
@@ -241,7 +285,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case6] ask with tools - direct answer', () => {
+  given('[case7] ask with tools - direct answer', () => {
     when('[t0] brain can answer without tools', () => {
       const result = useThen('ask succeeds', async () =>
         brainAtomSonnet.ask({
@@ -263,7 +307,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case7] tool result continuation', () => {
+  given('[case8] tool result continuation', () => {
     when('[t0] brain uses tool and receives result', () => {
       const resultFirst = useThen('first ask succeeds', async () =>
         brainAtomSonnet.ask({
@@ -304,7 +348,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case8] tool execution with success signal', () => {
+  given('[case9] tool execution with success signal', () => {
     when('[t0] tool returns success', () => {
       const resultFinal = useThen('full flow succeeds', async () => {
         // first: brain requests tool
@@ -343,7 +387,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case9] tool execution with error:constraint signal', () => {
+  given('[case10] tool execution with error:constraint signal', () => {
     when('[t0] tool returns constraint error', () => {
       const resultFinal = useThen('flow completes', async () => {
         // first: brain requests tool
@@ -384,7 +428,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case10] tool execution with error:malfunction signal', () => {
+  given('[case11] tool execution with error:malfunction signal', () => {
     when('[t0] tool returns malfunction error', () => {
       const resultFinal = useThen('flow completes', async () => {
         // first: brain requests tool
@@ -425,7 +469,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case11] parallel tool calls', () => {
+  given('[case12] parallel tool calls', () => {
     when('[t0] brain requests multiple tools at once', () => {
       const result = useThen('ask succeeds', async () =>
         brainAtomSonnet.ask({
@@ -451,7 +495,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case12] tools + output schema', () => {
+  given('[case13] tools + output schema', () => {
     when('[t0] tool use completes with structured output', () => {
       const resultFinal = useThen('flow completes', async () => {
         // first: brain requests tool
@@ -501,7 +545,7 @@ describe('genBrainAtom.integration', () => {
     });
   });
 
-  given('[case13] episode tracked through tool use', () => {
+  given('[case14] episode tracked through tool use', () => {
     when('[t0] tool use workflow completes', () => {
       const resultFinal = useThen('flow completes', async () => {
         // first call

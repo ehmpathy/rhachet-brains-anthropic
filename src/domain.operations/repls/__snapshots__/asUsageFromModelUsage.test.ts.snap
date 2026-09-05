@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`asUsageFromModelUsage given: [case3] the sdk swapped in a model we never requested when: [t0] the usage is totaled then: the full message reads as a caller would see it 1`] = `
+"UnexpectedCodePathError: the claude-agent-sdk reported token usage for no model we requested, so the cost cannot be priced
+
+{
+  "modelRequested": "claude-opus-5",
+  "modelsRan": [
+    "claude-sonnet-4-5-20250929"
+  ],
+  "hint": "the sdk substitutes its own model when it does not recognize the id it is handed. check that this rung is served by the installed @anthropic-ai/claude-agent-sdk version"
+}"
+`;

@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`asMessagesFromEpisode given: [case5] an episode whose tool turn was truncated in storage when: [t0] the messages are built then: the full message reads as a caller would see it 1`] = `
+"UnexpectedCodePathError: an episode exchange holds a corrupted tool-turn payload
+
+{
+  "parseError": "Unterminated string in JSON at position 81 (line 1 column 82)",
+  "contentHead": "[{\\"type\\":\\"tool_use\\",\\"id\\":\\"toolu_01\\",\\"name\\":\\"getWaveReport\\",\\"input\\":{\\"spot\\":\\"pipel",
+  "hint": "the field opens \`[{\`, so it was serialized as a content-block array and did not survive the round trip — most often truncated in storage. do NOT resume this episode: the prior turn cannot be rebuilt, so start a fresh one rather than let the model read the fragment as prose"
+}"
+`;

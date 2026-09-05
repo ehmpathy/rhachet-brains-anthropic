@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`genBrainRepl.integration given: [case2] ask is called (readonly mode) when: [t0] with simple prompt then: the receipt carries the whole shape a caller expects 1`] = `
+{
+  "cost": {
+    "cash": {
+      "deets": {
+        "cache": {
+          "get": "string",
+          "set": "string",
+        },
+        "input": "string",
+        "output": "string",
+      },
+      "total": "string",
+    },
+    "time": {
+      "milliseconds": "number",
+    },
+  },
+  "size": {
+    "chars": {
+      "cache": {
+        "get": "number",
+        "set": "number",
+      },
+      "input": "number",
+      "output": "number",
+    },
+    "tokens": {
+      "cache": {
+        "get": "number",
+        "set": "number",
+      },
+      "input": "number",
+      "output": "number",
+    },
+  },
+}
+`;

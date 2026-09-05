@@ -1,0 +1,148 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`reviewRoundTrip.acceptance given: [case1] a rules file and a target file on disk when: [t0] rhx review is invoked with a slug this behavior added then: the whole verdict reads as a caller would see it 1`] = `
+"
+🪨 run solid skill repo=bhrain/role=reviewer/skill=review
+
+🦉 let's review
+   ├─ brain: claude/sonnet/v5
+   ├─ focus: push
+   └─ scope
+      └─ paths: src/.test/assets/example.targets/*.ts
+
+🔭 metrics.expected
+   ├─ files
+   │  ├─ rules: <n>
+   │  └─ targets: <n>
+   ├─ tokens
+   │  ├─ estimate: <n>
+   │  └─ context: <pct>
+   └─ cost
+      └─ estimate: <price>
+
+🪵 logs
+   ├─ scope: .log/bhrain/review/<stamp>/input.scope.json
+   ├─ metrics: .log/bhrain/review/<stamp>/metrics.expected.json
+   └─ tokens: .log/bhrain/review/<stamp>/tokens.expected.md
+      ├─ rules: src (167, <pct>)
+      └─ targets: src (99, <pct>)
+
+🔍 what do we have here then?
+
+<spinner>
+
+✨ metrics.realized
+   ├─ tokens
+   │  ├─ input: <n>
+   │  ├─ cache.set: <n>
+   │  ├─ cache.get: <n>
+   │  ├─ output: <n>
+   │  └─ total: <n>
+   ├─ cost
+   │  └─ total: <price>
+   └─ time
+      └─ total: <ms>
+
+<verdict>
+
+🔍 review
+   ├─ logs: .log/bhrain/review/<stamp>
+   ├─ review: <dirOut>/review.md
+   └─ summary
+      ├─ <n> blockers
+      ├─ <n> nitpicks
+"
+`;
+
+exports[`reviewRoundTrip.acceptance given: [case2] a brain slug that no registry declares when: [t0] rhx review is invoked with it then: the failure reads as a caller would see it 1`] = `
+"
+🪨 run solid skill repo=bhrain/role=reviewer/skill=review
+   └─ 💥 failed with an error
+
+<throw site>
+
+BrainChoiceNotFoundError: BrainChoiceNotFoundError: brain not found: anthropic/claude/bogus/v9
+
+🔭 available brains
+   ├── ○ anthropic/claude/opus/v4
+   ├── ○ anthropic/claude/opus/v5
+   ├── ○ anthropic/claude/opus
+   ├── ○ anthropic/claude/opus/v4.5
+   ├── ○ anthropic/claude/opus/v4.6
+   ├── ○ anthropic/claude/opus/v4.7
+   ├── ○ anthropic/claude/opus/v4.8
+   ├── ○ anthropic/claude/sonnet/v4
+   ├── ○ anthropic/claude/sonnet/v5
+   ├── ○ anthropic/claude/fable/v5
+   ├── ○ anthropic/claude/sonnet
+   ├── ↻ anthropic/claude/code
+   ├── ↻ anthropic/claude/code/opus/v4
+   ├── ↻ anthropic/claude/code/opus/v5
+   ├── ○ anthropic/claude/haiku
+   ├── ○ anthropic/claude/haiku/v3.5
+   ├── ○ anthropic/claude/haiku/v4.5
+   ├── ○ anthropic/claude/sonnet/v4.5
+   ├── ○ anthropic/claude/sonnet/v4.6
+   ├── ○ anthropic/claude/fable
+   ├── ↻ anthropic/claude/code/opus
+   └── (and 24 more)
+
+{
+  "choice": "anthropic/claude/bogus/v9",
+  "available": {
+    "atoms": [
+      "anthropic/claude/haiku",
+      "anthropic/claude/haiku/v3.5",
+      "anthropic/claude/haiku/v4.5",
+      "anthropic/claude/sonnet",
+      "anthropic/claude/sonnet/v4",
+      "anthropic/claude/sonnet/v4.5",
+      "anthropic/claude/sonnet/v4.6",
+      "anthropic/claude/sonnet/v5",
+      "anthropic/claude/opus",
+      "anthropic/claude/opus/v4",
+      "anthropic/claude/opus/v4.5",
+      "anthropic/claude/opus/v4.6",
+      "anthropic/claude/opus/v4.7",
+      "anthropic/claude/opus/v4.8",
+      "anthropic/claude/opus/v5",
+      "anthropic/claude/fable",
+      "anthropic/claude/fable/v5",
+      "fireworks/deepseek/v4-pro",
+      "fireworks/deepseek/v4-flash",
+      "fireworks/kimi/k2.7-code",
+      "fireworks/kimi/k2.6",
+      "fireworks/qwen/3.7-plus",
+      "fireworks/glm/5.2",
+      "fireworks/minimax/m3",
+      "fireworks/minimax/2.7",
+      "fireworks/gpt-oss/120b",
+      "fireworks/gpt-oss/20b"
+    ],
+    "repls": [
+      "anthropic/claude/code",
+      "anthropic/claude/code/haiku",
+      "anthropic/claude/code/haiku/v3.5",
+      "anthropic/claude/code/haiku/v4.5",
+      "anthropic/claude/code/sonnet",
+      "anthropic/claude/code/sonnet/v4",
+      "anthropic/claude/code/sonnet/v4.5",
+      "anthropic/claude/code/sonnet/v4.6",
+      "anthropic/claude/code/sonnet/v5",
+      "anthropic/claude/code/opus",
+      "anthropic/claude/code/opus/v4",
+      "anthropic/claude/code/opus/v4.5",
+      "anthropic/claude/code/opus/v4.6",
+      "anthropic/claude/code/opus/v4.7",
+      "anthropic/claude/code/opus/v4.8",
+      "anthropic/claude/code/opus/v5",
+      "anthropic/claude/code/fable",
+      "anthropic/claude/code/fable/v5"
+    ]
+  }
+}
+<stack>
+
+Node.js <version>
+"
+`;

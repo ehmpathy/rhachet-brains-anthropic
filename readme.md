@@ -51,36 +51,98 @@ const { output: { proposal } } = await brainRepl.act({
 
 ## available brains
 
+<!-- generated:brains:head -->
+
+<!-- do NOT edit by hand. run `npm run fix:readme` to regenerate. -->
+
 ### atoms (via genBrainAtom)
 
-stateless inference without tool use. uses anthropic messages api with structured outputs.
+stateless inference without tool use. uses the anthropic messages api with
+structured outputs.
 
-| slug | model | cost ($/MTok) | cutoff | description |
-| --- | --- | --- | --- | --- |
-| `claude/haiku` | claude-haiku-4-5-20251001 | $1 / $5 | 2025-04 | fastest and most cost-effective |
-| `claude/haiku/v3.5` | claude-3-5-haiku-20241022 | $0.80 / $4 | 2024-04 | fast and cost-effective |
-| `claude/haiku/v4.5` | claude-haiku-4-5-20251001 | $1 / $5 | 2025-04 | fastest and most cost-effective |
-| `claude/sonnet` | claude-sonnet-4-5-20250929 | $3 / $15 | 2025-04 | balanced performance and capability |
-| `claude/sonnet/v4` | claude-sonnet-4-20250514 | $3 / $15 | 2025-04 | balanced performance and capability |
-| `claude/sonnet/v4.5` | claude-sonnet-4-5-20250929 | $3 / $15 | 2025-04 | balanced performance and capability |
-| `claude/opus` | claude-opus-4-5-20251101 | $5 / $25 | 2025-05 | most capable for complex reasoning |
-| `claude/opus/v4` | claude-opus-4-20250514 | $15 / $75 | 2025-04 | highly capable for complex reasoning |
-| `claude/opus/v4.5` | claude-opus-4-5-20251101 | $5 / $25 | 2025-05 | most capable for complex reasoning |
+⚠️ **a bare alias MOVES.** `claude/opus` tracks the newest opus, so it crosses major
+generations on your next `npm update`. pin a rung to freeze the `model` id. note the vendor
+inverts this word: it calls a dateless id like `claude-opus-5` a pinned snapshot, not an alias.
+
+⚠️ **a pinned rung freezes the model id, NOT the behavior — read two columns before you pin.**
+`thought`: most rungs think by default, which raises output tokens per call; only `v4`, `v4.5` still
+think on request, and they pay for it with a smaller context. `tokenizer`: a `4.7+` row counts
+roughly 30% more tokens than a `pre-4.7` row for the same text, so a token budget or a
+`metrics.size.tokens` comparison does not carry across that line.
+
+| slug | model | rate ($/MTok in / out) | context | thought | tokenizer | cutoff | deprecated |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `claude/haiku` | claude-haiku-4-5-20251001 | $1.00 / $5.00 | 200K | on request | pre-4.7 | 2025-02-01 | — |
+| `claude/haiku/v3.5` | claude-3-5-haiku-20241022 | $0.80 / $4.00 | 200K | none | pre-4.7 | 2024-04-01 | 🪦 2026-02-19 → `claude/haiku/v4.5` |
+| `claude/haiku/v4.5` | claude-haiku-4-5-20251001 | $1.00 / $5.00 | 200K | on request | pre-4.7 | 2025-02-01 | — |
+| `claude/sonnet` | claude-sonnet-5 | $2.00 / $10.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/sonnet/v4` | claude-sonnet-4-20250514 | $3.00 / $15.00 | 200K | on request | pre-4.7 | 2025-04-01 | 🪦 2026-06-15 → `claude/sonnet/v5` |
+| `claude/sonnet/v4.5` | claude-sonnet-4-5-20250929 | $3.00 / $15.00 | 200K | on request | pre-4.7 | 2025-01-01 | — |
+| `claude/sonnet/v4.6` | claude-sonnet-4-6 | $3.00 / $15.00 | 1M | by default (effort: high) | pre-4.7 | 2025-08-01 | — |
+| `claude/sonnet/v5` | claude-sonnet-5 | $2.00 / $10.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/opus` | claude-opus-5 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-05-01 | — |
+| `claude/opus/v4` | claude-opus-4-20250514 | $15.00 / $75.00 | 200K | on request | pre-4.7 | 2025-04-01 | 🪦 2026-06-15 → `claude/opus/v5` |
+| `claude/opus/v4.5` | claude-opus-4-5-20251101 | $5.00 / $25.00 | 200K | on request | pre-4.7 | 2025-05-01 | — |
+| `claude/opus/v4.6` | claude-opus-4-6 | $5.00 / $25.00 | 1M | by default (effort: high) | pre-4.7 | 2025-05-01 | — |
+| `claude/opus/v4.7` | claude-opus-4-7 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/opus/v4.8` | claude-opus-4-8 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/opus/v5` | claude-opus-5 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-05-01 | — |
+| `claude/fable` | claude-fable-5 | $10.00 / $50.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/fable/v5` | claude-fable-5 | $10.00 / $50.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
 
 ### repls (via genBrainRepl)
 
-agentic code assistant with tool use via claude-agent-sdk. repl slugs map to atom configs.
+agentic code assistant with tool use via claude-agent-sdk. repl slugs mirror the atom
+ladder rung for rung and reuse its configs.
 
-| slug | atom | cost ($/MTok) | cutoff | description |
-| --- | --- | --- | --- | --- |
-| `claude/code` | `claude/sonnet` | $3 / $15 | 2025-04 | balanced agentic capability |
-| `claude/code/haiku` | `claude/haiku` | $1 / $5 | 2025-04 | fast and cost-effective agent |
-| `claude/code/haiku/v4.5` | `claude/haiku/v4.5` | $1 / $5 | 2025-04 | fast and cost-effective agent |
-| `claude/code/sonnet` | `claude/sonnet` | $3 / $15 | 2025-04 | balanced agentic capability |
-| `claude/code/sonnet/v4` | `claude/sonnet/v4` | $3 / $15 | 2025-04 | balanced agentic capability |
-| `claude/code/sonnet/v4.5` | `claude/sonnet/v4.5` | $3 / $15 | 2025-04 | balanced agentic capability |
-| `claude/code/opus` | `claude/opus` | $5 / $25 | 2025-05 | most capable agent |
-| `claude/code/opus/v4.5` | `claude/opus/v4.5` | $5 / $25 | 2025-05 | most capable agent |
+⚠️ **the bare `claude/code` MOVES too.** it rides the newest sonnet, so the default repl
+changes model across a version bump just as `claude/sonnet` does. pin `claude/code/sonnet/v4.5`
+to freeze it.
+
+| slug | model | rate ($/MTok in / out) | context | thought | tokenizer | cutoff | deprecated |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `claude/code` | claude-sonnet-5 | $2.00 / $10.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/code/haiku` | claude-haiku-4-5-20251001 | $1.00 / $5.00 | 200K | on request | pre-4.7 | 2025-02-01 | — |
+| `claude/code/haiku/v3.5` | claude-3-5-haiku-20241022 | $0.80 / $4.00 | 200K | none | pre-4.7 | 2024-04-01 | 🪦 2026-02-19 → `claude/code/haiku/v4.5` |
+| `claude/code/haiku/v4.5` | claude-haiku-4-5-20251001 | $1.00 / $5.00 | 200K | on request | pre-4.7 | 2025-02-01 | — |
+| `claude/code/sonnet` | claude-sonnet-5 | $2.00 / $10.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/code/sonnet/v4` | claude-sonnet-4-20250514 | $3.00 / $15.00 | 200K | on request | pre-4.7 | 2025-04-01 | 🪦 2026-06-15 → `claude/code/sonnet/v5` |
+| `claude/code/sonnet/v4.5` | claude-sonnet-4-5-20250929 | $3.00 / $15.00 | 200K | on request | pre-4.7 | 2025-01-01 | — |
+| `claude/code/sonnet/v4.6` | claude-sonnet-4-6 | $3.00 / $15.00 | 1M | by default (effort: high) | pre-4.7 | 2025-08-01 | — |
+| `claude/code/sonnet/v5` | claude-sonnet-5 | $2.00 / $10.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/code/opus` | claude-opus-5 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-05-01 | — |
+| `claude/code/opus/v4` | claude-opus-4-20250514 | $15.00 / $75.00 | 200K | on request | pre-4.7 | 2025-04-01 | 🪦 2026-06-15 → `claude/code/opus/v5` |
+| `claude/code/opus/v4.5` | claude-opus-4-5-20251101 | $5.00 / $25.00 | 200K | on request | pre-4.7 | 2025-05-01 | — |
+| `claude/code/opus/v4.6` | claude-opus-4-6 | $5.00 / $25.00 | 1M | by default (effort: high) | pre-4.7 | 2025-05-01 | — |
+| `claude/code/opus/v4.7` | claude-opus-4-7 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/code/opus/v4.8` | claude-opus-4-8 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/code/opus/v5` | claude-opus-5 | $5.00 / $25.00 | 1M | by default (effort: high) | 4.7+ | 2026-05-01 | — |
+| `claude/code/fable` | claude-fable-5 | $10.00 / $50.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+| `claude/code/fable/v5` | claude-fable-5 | $10.00 / $50.00 | 1M | by default (effort: high) | 4.7+ | 2026-01-01 | — |
+
+### deprecated rungs
+
+a 🪦 rung is retired on the **first-party** Claude API but still served on a partner
+platform. it stays registered because a caller who injects their own client
+(`context.anthropic`) can still reach it. on the default client it will not serve you —
+so read the reason before you pin one:
+
+⚠️ **on the repl ladder, one of these does not fail — it answers with a DIFFERENT model.**
+`claude/code/opus/v4` is accepted by claude-agent-sdk, which then quietly runs
+`claude-opus-5` and replies as though the pin were honored. we catch it —
+`asUsageFromModelUsage` refuses token usage for a model we did not request — so you get an
+error rather than a wrong answer at a wrong price. but that guard is ours, not the sdk's.
+the other two repl rungs below refuse loudly at the sdk. verified live in
+`BrainRepl.slugReach.integration.test.ts`.
+
+- `claude/haiku/v3.5` — retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung.
+- `claude/sonnet/v4` — retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung.
+- `claude/opus/v4` — retired on the first-party Claude API. still served on Google Cloud ONLY, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung.
+- `claude/code/haiku/v3.5` — retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung.
+- `claude/code/sonnet/v4` — retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung.
+- `claude/code/opus/v4` — retired on the first-party Claude API. still served on Google Cloud ONLY, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung.
+
+<!-- generated:brains:foot -->
 
 ## episode continuation
 
@@ -111,8 +173,10 @@ const resultSecond = await brainAtom.ask({
 ```
 
 **limitations:**
-- haiku does not support continuation with structured outputs (will throw `BadRequestError`)
-- use sonnet or opus for continuation workflows
+- haiku does not honor continuation — `genBrainAtom` throws `BadRequestError` rather than let the
+  call through. ⚠️ the guard is not cosmetic: with it disabled the call **succeeds** and haiku
+  replies that it cannot recall prior turns, so the failure is silent, not loud
+- use sonnet, opus, or fable for continuation workflows
 
 ### repls (not supported)
 
@@ -138,11 +202,17 @@ repls still **export** episode/series data for tracking and audit purposes. the 
 
 | brain | continuation | notes |
 | --- | --- | --- |
-| atom (sonnet, opus) | ✅ supported | use `on: { episode }` to continue |
+| atom (sonnet) | ✅ supported | use `on: { episode }` to continue |
+| atom (opus) | ✅ supported | use `on: { episode }` to continue |
+| atom (fable) | ✅ supported | use `on: { episode }` to continue |
 | atom (haiku) | ❌ not supported | throws `BadRequestError` |
 | repl (all) | ❌ not supported | throws `BadRequestError` |
 
-for workflows requiring continuation, use `genBrainAtom` with sonnet or opus.
+every ✅ above is backed by a live multi-turn call that **recalls the prior turn**, not merely by a
+call that returns — see `genBrainAtom.integration.test.ts`. that distinction matters: haiku returns
+fine and silently drops the context, which is why it is guarded rather than left to the caller.
+
+for a workflow that needs continuation, use `genBrainAtom` with sonnet, opus, or fable.
 
 ## sources
 

@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`genBrainAtom malformed output given: [case1] the model answers in prose rather than json when: [t0] ask is called then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: the model returned a text block that is not valid json
+
+{
+  "slug": "claude/opus",
+  "model": "claude-opus-5",
+  "parseError": "Unexpected token 'S', \\"Sure! I ca\\"... is not valid JSON",
+  "textHead": "Sure! I can help with that. The ocean is very large.",
+  "hint": "the model answered in prose rather than through the structured output format — sharpen the prompt, or check that this rung honors \`output_config.format\`. note this is NOT the truncation case; a cut-off response fails the max_tokens guard instead."
+}"
+`;

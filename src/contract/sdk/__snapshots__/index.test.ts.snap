@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`rhachet-brains-anthropic.integration given: [case1] getBrainAtomsByAnthropic when: [t0] called then: the descriptions a consumer reads match the snapshot 1`] = `
+{
+  "claude/fable": "claude fable 5 - highest available capability, for long-running agents",
+  "claude/fable/v5": "claude fable 5 - highest available capability, for long-running agents",
+  "claude/haiku": "claude haiku 4.5 - fastest and most cost-effective",
+  "claude/haiku/v3.5": "claude haiku 3.5 - fast and cost-effective ⚠️ deprecated 2026-02-19: retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung. use \`claude/haiku/v4.5\` instead.",
+  "claude/haiku/v4.5": "claude haiku 4.5 - fastest and most cost-effective",
+  "claude/opus": "claude opus 5 - for complex agentic code and enterprise work",
+  "claude/opus/v4": "claude opus 4 - highly capable ⚠️ deprecated 2026-06-15: retired on the first-party Claude API. still served on Google Cloud ONLY, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung. use \`claude/opus/v5\` instead.",
+  "claude/opus/v4.5": "claude opus 4.5 - capable; the last opus rung that thinks on request, not by default",
+  "claude/opus/v4.6": "claude opus 4.6 - capable, 1M context, adaptive thought",
+  "claude/opus/v4.7": "claude opus 4.7 - capable, new tokenizer",
+  "claude/opus/v4.8": "claude opus 4.8 - capable, complex agentic work",
+  "claude/opus/v5": "claude opus 5 - for complex agentic code and enterprise work",
+  "claude/sonnet": "claude sonnet 5 - best combination of speed and intelligence",
+  "claude/sonnet/v4": "claude sonnet 4 - balanced performance ⚠️ deprecated 2026-06-15: retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung. use \`claude/sonnet/v5\` instead.",
+  "claude/sonnet/v4.5": "claude sonnet 4.5 - balanced performance and capability",
+  "claude/sonnet/v4.6": "claude sonnet 4.6 - balanced, 1M context, adaptive thought",
+  "claude/sonnet/v5": "claude sonnet 5 - best combination of speed and intelligence",
+}
+`;
+
+exports[`rhachet-brains-anthropic.integration given: [case2] getBrainReplsByAnthropic when: [t0] called then: the repl descriptions match the snapshot 1`] = `
+{
+  "claude/code": "claude code on claude-sonnet-5 - agentic code assistant with tool use",
+  "claude/code/fable": "claude code on claude-fable-5 - agentic code assistant with tool use",
+  "claude/code/fable/v5": "claude code on claude-fable-5 - agentic code assistant with tool use",
+  "claude/code/haiku": "claude code on claude-haiku-4-5-20251001 - agentic code assistant with tool use",
+  "claude/code/haiku/v3.5": "claude code on claude-3-5-haiku-20241022 - agentic code assistant with tool use ⚠️ deprecated 2026-02-19: retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung. use \`claude/code/haiku/v4.5\` instead.",
+  "claude/code/haiku/v4.5": "claude code on claude-haiku-4-5-20251001 - agentic code assistant with tool use",
+  "claude/code/opus": "claude code on claude-opus-5 - agentic code assistant with tool use",
+  "claude/code/opus/v4": "claude code on claude-opus-4-20250514 - agentic code assistant with tool use ⚠️ deprecated 2026-06-15: retired on the first-party Claude API. still served on Google Cloud ONLY, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung. use \`claude/code/opus/v5\` instead.",
+  "claude/code/opus/v4.5": "claude code on claude-opus-4-5-20251101 - agentic code assistant with tool use",
+  "claude/code/opus/v4.6": "claude code on claude-opus-4-6 - agentic code assistant with tool use",
+  "claude/code/opus/v4.7": "claude code on claude-opus-4-7 - agentic code assistant with tool use",
+  "claude/code/opus/v4.8": "claude code on claude-opus-4-8 - agentic code assistant with tool use",
+  "claude/code/opus/v5": "claude code on claude-opus-5 - agentic code assistant with tool use",
+  "claude/code/sonnet": "claude code on claude-sonnet-5 - agentic code assistant with tool use",
+  "claude/code/sonnet/v4": "claude code on claude-sonnet-4-20250514 - agentic code assistant with tool use ⚠️ deprecated 2026-06-15: retired on the first-party Claude API. still served on Amazon Bedrock and Google Cloud, so it stays reachable via an injected client (context.anthropic). the default client will not serve you this rung. use \`claude/code/sonnet/v5\` instead.",
+  "claude/code/sonnet/v4.5": "claude code on claude-sonnet-4-5-20250929 - agentic code assistant with tool use",
+  "claude/code/sonnet/v4.6": "claude code on claude-sonnet-4-6 - agentic code assistant with tool use",
+  "claude/code/sonnet/v5": "claude code on claude-sonnet-5 - agentic code assistant with tool use",
+}
+`;
