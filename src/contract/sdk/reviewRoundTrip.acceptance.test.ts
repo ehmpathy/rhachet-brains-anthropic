@@ -41,6 +41,29 @@ import { join } from 'node:path';
  * .note = an acceptance test: it drives the real CLI contract with real credentials, per
  *   `rule.require.acceptance.blackbox` and `rule.forbid.acceptance.mocks`. the scope is
  *   one tiny rule against one tiny file to keep the live call cheap.
+ *
+ * ⚠️ .the second dependency, and it is NOT the credential = `rhx review` is a skill of
+ *   `repo=bhrain/role=reviewer`, so that role must be LINKED into `.agent/` before the
+ *   child cli can find it. only `repo=.this` is tracked in git; every other role is a
+ *   link `rhachet roles link` writes, and `.agent/repo=bhrain/.gitignore` keeps it out of
+ *   the tree.
+ *
+ *   that link is provisioned by `package.json`'s `prepare` — which is guarded by
+ *   `[ -z $CI ]`, so it is SKIPPED in ci. so this test passed on every dev machine and
+ *   failed in ci with `no skill "review" found in any linked role`, and the gap stayed
+ *   invisible until the `test` workflow was repaired and ran for the first time since
+ *   2026-07-28.
+ *
+ *   the repair is `pretest:acceptance:locally` → `prepare:roles:reviewer`, an npm
+ *   pre-hook that links the one role this suite needs. it lives in `package.json` rather
+ *   than in `.github/workflows/.test.yml` for two reasons: `.test.yml` is a declapract
+ *   template shared with peer repos, so a repo-specific link step there is wrong for them
+ *   and is re-stamped away; and the dependency belongs to the SUITE, so a fresh clone run
+ *   with `CI=1` set hits the same wall off ci entirely.
+ *
+ * .note = `roles link --repo bhrain --role reviewer` is additive. `rhachet init --roles`
+ *   would REPLACE the linked set, so it must not be used here — it would drop a
+ *   developer's other roles as a side effect of a test run.
  */
 
 // a real agentic review over a live model; well past the default jest timeout
