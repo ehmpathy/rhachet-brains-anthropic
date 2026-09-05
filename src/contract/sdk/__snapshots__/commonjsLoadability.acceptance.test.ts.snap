@@ -3,15 +3,193 @@
 exports[`commonjsLoadability.acceptance given: [case1] the built package under a real commonjs require() when: [t1] the registry factories are called after require() then: the registered brain slugs match the contract snapshot 1`] = `
 {
   "atomSlugs": [
+    "claude/fable",
+    "claude/fable/v5",
     "claude/haiku",
+    "claude/haiku/v3.5",
+    "claude/haiku/v4.5",
     "claude/opus",
+    "claude/opus/v4",
+    "claude/opus/v4.5",
+    "claude/opus/v4.6",
+    "claude/opus/v4.7",
+    "claude/opus/v4.8",
+    "claude/opus/v5",
     "claude/sonnet",
+    "claude/sonnet/v4",
+    "claude/sonnet/v4.5",
+    "claude/sonnet/v4.6",
+    "claude/sonnet/v5",
   ],
   "replSlugs": [
     "claude/code",
+    "claude/code/fable",
+    "claude/code/fable/v5",
     "claude/code/haiku",
+    "claude/code/haiku/v3.5",
+    "claude/code/haiku/v4.5",
     "claude/code/opus",
+    "claude/code/opus/v4",
+    "claude/code/opus/v4.5",
+    "claude/code/opus/v4.6",
+    "claude/code/opus/v4.7",
+    "claude/code/opus/v4.8",
+    "claude/code/opus/v5",
     "claude/code/sonnet",
+    "claude/code/sonnet/v4",
+    "claude/code/sonnet/v4.5",
+    "claude/code/sonnet/v4.6",
+    "claude/code/sonnet/v5",
   ],
+}
+`;
+
+exports[`commonjsLoadability.acceptance given: [case3] the built package runs a repl ask under real commonjs when: [t0] ask is called in a child commonjs process then: the receipt shape matches the contract snapshot 1`] = `
+{
+  "calls": "null",
+  "episode": {
+    "exchanges": [
+      {
+        "exid": "string",
+        "hash": "string",
+        "input": "string",
+        "output": "string",
+      },
+    ],
+    "exid": "string",
+    "hash": "string",
+  },
+  "metrics": {
+    "cost": {
+      "cash": {
+        "deets": {
+          "cache": {
+            "get": "string",
+            "set": "string",
+          },
+          "input": "string",
+          "output": "string",
+        },
+        "total": "string",
+      },
+      "time": {
+        "milliseconds": "number",
+      },
+    },
+    "size": {
+      "chars": {
+        "cache": {
+          "get": "number",
+          "set": "number",
+        },
+        "input": "number",
+        "output": "number",
+      },
+      "tokens": {
+        "cache": {
+          "get": "number",
+          "set": "number",
+        },
+        "input": "number",
+        "output": "number",
+      },
+    },
+  },
+  "output": {
+    "content": "string",
+  },
+  "series": {
+    "episodes": [
+      {
+        "exchanges": [
+          {
+            "exid": "string",
+            "hash": "string",
+            "input": "string",
+            "output": "string",
+          },
+        ],
+        "exid": "string",
+        "hash": "string",
+      },
+    ],
+    "exid": "string",
+    "hash": "string",
+  },
+}
+`;
+
+exports[`commonjsLoadability.acceptance given: [case4] the built package runs a repl act under real commonjs when: [t0] act is called in a child commonjs process then: the act receipt shape matches the contract snapshot 1`] = `
+{
+  "calls": "null",
+  "episode": {
+    "exchanges": [
+      {
+        "exid": "string",
+        "hash": "string",
+        "input": "string",
+        "output": "string",
+      },
+    ],
+    "exid": "string",
+    "hash": "string",
+  },
+  "metrics": {
+    "cost": {
+      "cash": {
+        "deets": {
+          "cache": {
+            "get": "string",
+            "set": "string",
+          },
+          "input": "string",
+          "output": "string",
+        },
+        "total": "string",
+      },
+      "time": {
+        "milliseconds": "number",
+      },
+    },
+    "size": {
+      "chars": {
+        "cache": {
+          "get": "number",
+          "set": "number",
+        },
+        "input": "number",
+        "output": "number",
+      },
+      "tokens": {
+        "cache": {
+          "get": "number",
+          "set": "number",
+        },
+        "input": "number",
+        "output": "number",
+      },
+    },
+  },
+  "output": {
+    "content": "string",
+  },
+  "series": {
+    "episodes": [
+      {
+        "exchanges": [
+          {
+            "exid": "string",
+            "hash": "string",
+            "input": "string",
+            "output": "string",
+          },
+        ],
+        "exid": "string",
+        "hash": "string",
+      },
+    ],
+    "exid": "string",
+    "hash": "string",
+  },
 }
 `;

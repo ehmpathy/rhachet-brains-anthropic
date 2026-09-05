@@ -1,0 +1,38 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`the receipt a caller reads off an ask given: [case1] an ask that completes on claude/opus when: [t0] the metrics are read then: the whole receipt reads as a caller would see it 1`] = `
+{
+  "cash": {
+    "deets": {
+      "cache": {
+        "get": "USD 0.000_000_000",
+        "set": "USD 0.000_000_000",
+      },
+      "input": "USD 0.005_000_000",
+      "output": "USD 0.010_000_000",
+    },
+    "total": "USD 0.015_000_000",
+  },
+  "size": {
+    "chars": {
+      "cache": {
+        "get": 0,
+        "set": 0,
+      },
+      "input": 24,
+      "output": 16,
+    },
+    "tokens": {
+      "cache": {
+        "get": 0,
+        "set": 0,
+      },
+      "input": 1000,
+      "output": 400,
+    },
+  },
+  "timeKeys": [
+    "milliseconds",
+  ],
+}
+`;

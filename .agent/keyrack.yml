@@ -1,6 +1,15 @@
 org: ehmpathy
 extends:
+  - .agent/repo=bhuild/role=dispatcher/keyrack.yml
   - .agent/repo=ehmpathy/role=mechanic/keyrack.yml
 env.prod: null
 env.prep: null
-env.test: null
+
+# .why = this package's integration + acceptance suites make real Claude API calls
+#   (genBrainAtom.integration.test.ts, genBrainRepl.integration.test.ts), so they
+#   fail fast without this key. it was never declared, which is how three retired
+#   model slugs shipped green in 0.4.3 — CI could not call the api to contradict them.
+# .note = declared here, but a human must still fill it:
+#     rhx keyrack fill --owner ehmpath
+env.test:
+  - ANTHROPIC_API_KEY

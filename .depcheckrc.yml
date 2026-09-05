@@ -22,3 +22,9 @@ ignores:
   - tsc-alias
   - yalc
   - rhachet-brains-anthropic
+  # .note = no import names it, so depcheck cannot see it. rhachet discovers brains
+  #   by a walk of THIS package's declared deps, so the fireworks brain must be a
+  #   direct devDependency for `rhx review --brain fireworks/...` to find it. as a
+  #   peer of rhachet-roles-bhrain alone it stays invisible, and every peer reviewer
+  #   halts with BrainChoiceNotFoundError.
+  - rhachet-brains-fireworksai

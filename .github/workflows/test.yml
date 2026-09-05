@@ -12,6 +12,41 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }} # per [workflow] x [branch, tag]
   cancel-in-progress: true #  cancel workflows for non-latest commits
 
+# ⚠️ this block is load-bearing, and its absence is silent.
+#
+# `.test.yml` declares `permissions: id-token: write` for its aws oidc step. a
+# caller may only grant permissions it holds itself, so a caller that omits this
+# block hands down the default — and once the default tightened to read-only,
+# the call became unsatisfiable.
+#
+# github rejects that at PARSE time: a 0s `startup_failure` with no job, no
+# annotation, and no error text reachable through the api.
+#
+# ⚠️ and a run that fails at parse time emits NO check runs at all — so the
+# whole suite vanished from the PR gate, and `rhx git.release` reported "all
+# checks passed" while the suite never ran. a broken workflow and an absent
+# workflow read identically there.
+#
+# .the timeline, stated precisely, because it is easy to overstate = this
+# workflow last ran GREEN on 2026-07-28 (the v0.4.3 release). no push touched it
+# for the next six weeks. the first push after that window — 2026-09-05 — hit
+# `startup_failure`. so it did not fail repeatedly and unnoticed; the default
+# permission tightened during a quiet window, and the break surfaced on the very
+# next run. the hazard is that a rarely-fired workflow can be broken by an
+# environment change it never saw coming.
+#
+# ⚠️ the trigger is NOT the cause, though it looks like one. this workflow fires
+# on `push`, not `pull_request`, and an earlier revision of this comment blamed
+# that for the invisibility. it is false: the very commit that restored this
+# block surfaced all 8 `suite / *` jobs in `gh pr checks`, with the trigger
+# unchanged. push-triggered jobs attach to the head sha and DO show on the PR —
+# once the run actually starts.
+#
+# the peer repos on this template carry the block; this repo had lost it.
+permissions:
+  id-token: write # required for oidc
+  contents: read
+
 jobs:
   suite:
     uses: ./.github/workflows/.test.yml

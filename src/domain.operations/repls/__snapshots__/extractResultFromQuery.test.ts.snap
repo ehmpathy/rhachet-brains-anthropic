@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`extractResultFromQuery given: [case1] the sdk reports a non-success result when: [t0] the stream is read then: the full message reads as a caller would see it 1`] = `
+"UnexpectedCodePathError: the claude-agent-sdk query failed
+
+{
+  "mode": "ask",
+  "model": "claude-opus-5",
+  "subtype": "error_during_execution",
+  "errors": [
+    {
+      "message": "model not served"
+    }
+  ],
+  "hint": "read \`subtype\` and \`errors\` for the sdk-side cause. if this rung is new, check that the installed @anthropic-ai/claude-agent-sdk version serves it"
+}"
+`;
+
+exports[`extractResultFromQuery given: [case2] the stream ends and no result ever arrives when: [t0] the stream is read then: the full message reads as a caller would see it 1`] = `
+"UnexpectedCodePathError: the claude-agent-sdk stream ended with no result message
+
+{
+  "mode": "act",
+  "model": "claude-opus-5",
+  "hint": "the sdk yielded messages but never a \`result\`. check the sdk version and whether this rung is served by it"
+}"
+`;
+
+exports[`extractResultFromQuery given: [case3] the sdk reports success, but the payload is not json when: [t0] the stream is read then: the full message reads as a caller would see it 1`] = `
+"BadRequestError: the claude-agent-sdk returned a result that is not valid json
+
+{
+  "mode": "act",
+  "model": "claude-opus-5",
+  "parseError": "Unexpected token 'S', \\"Sure! I ca\\"... is not valid JSON",
+  "resultHead": "Sure! I can help with that. The answer is",
+  "hint": "the sdk gave no \`structured_output\`, so this fell back to a plain-text parse. the model most likely answered in prose rather than through the output tool — sharpen the prompt, or check that this rung honors structured outputs"
+}"
+`;
+
+exports[`extractResultFromQuery given: [case5] the sdk yields TWO success results for one query when: [t0] the stream is read then: the full message reads as a caller would see it 1`] = `
+"UnexpectedCodePathError: the claude-agent-sdk yielded more than one success result for a single query
+
+{
+  "mode": "ask",
+  "model": "claude-opus-5",
+  "hint": "this reader assumes exactly one result per query. if a newer @anthropic-ai/claude-agent-sdk streams partial results, teach this reader how to combine them — do NOT simply take the last, which silently discards the first"
+}"
+`;
